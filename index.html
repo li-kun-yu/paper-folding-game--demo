@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>折纸大冒险 · 创意过河</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Press Start 2P', 'Courier New', monospace; }
+        body { background: #e8f5e9; min-height: 100vh; width: 100%; display: flex; flex-direction: column; align-items: center; color: #1b5e20; position: relative; overflow-x: hidden; box-sizing: border-box; }
+
+        /* 装饰性背景元素 */
+        body::before { content: ''; position: fixed; top: -100px; right: -100px; width: 300px; height: 300px; background: #c8e6c9; border-radius: 50%; z-index: 0; }
+        body::after { content: ''; position: fixed; bottom: -150px; left: -150px; width: 400px; height: 400px; background: #ffecb3; border-radius: 50%; z-index: 0; }
+
+        .game-container { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1150px; width: 100%; padding: 20px; justify-content: center; align-items: flex-start; position: relative; z-index: 1; }
+
+        .scene-section { background: #ffffff; border-radius: 32px; padding: 28px; flex: 1; min-width: 500px; max-width: 700px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); position: relative; overflow: hidden; }
+
+        .scene-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 80px; background: linear-gradient(135deg, #2e7d32 0%, #43a047 50%, #66bb6a 100%); border-radius: 32px 32px 0 0; z-index: 0; }
+        .scene-section::after { content: ''; position: absolute; bottom: -60px; right: -60px; width: 180px; height: 180px; background: #ffecb3; border-radius: 50%; z-index: 0; }
+
+        .camera-section { background: #ffffff; border-radius: 24px; padding: 16px; flex: 0 0 340px; box-shadow: 0 6px 24px rgba(0,0,0,0.08); position: sticky; top: 20px; overflow: hidden; }
+
+        .camera-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50px; background: linear-gradient(135deg, #66bb6a 0%, #81c784 100%); border-radius: 24px 24px 0 0; z-index: 0; }
+
+        .section-title { font-size: 14px; color: #ffffff; margin-bottom: 24px; text-align: center; font-weight: 600; position: relative; z-index: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.1); line-height: 1.4; }
+        .camera-section .section-title { font-size: 12px; margin-bottom: 16px; }
+
+        .scene-canvas { width: 100%; border: none; background: #fafafa; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); border-radius: 20px; position: relative; z-index: 1; }
+
+        .camera-wrapper { position: relative; width: 100%; border: 2px solid #c8e6c9; background: #ffffff; box-shadow: 0 3px 12px rgba(0,0,0,0.06); border-radius: 16px; overflow: hidden; }
+
+        .camera-preview { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+        .camera-placeholder { width: 100%; aspect-ratio: 4/3; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #1b5e20; font-size: 14px; border-radius: 20px; gap: 8px; }
+
+        .scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, transparent, #66bb6a, transparent); animation: scan 2s linear infinite; pointer-events: none; }
+        @keyframes scan { 0% { top: 0; opacity: 1; } 100% { top: 100%; opacity: 0.3; } }
+
+        .controls { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .pixel-btn { padding: 12px 18px; font-family: inherit; font-size: 10px; font-weight: 600; border: none; background: #4caf50; color: #fff; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 3px 10px rgba(76,175,80,0.3); border-radius: 14px; letter-spacing: 1px; }
+        .pixel-btn:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 6px 16px rgba(76,175,80,0.4); }
+        .pixel-btn:active { transform: translateY(-0.5px) scale(0.99); box-shadow: 0 2px 6px rgba(76,175,80,0.3); }
+        .pixel-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+        .btn-start { background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); }
+        .btn-capture { background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%); box-shadow: 0 3px 10px rgba(33,150,243,0.3); }
+        .btn-capture:hover { box-shadow: 0 6px 16px rgba(33,150,243,0.4); }
+        .btn-retry { background: linear-gradient(135deg, #ff9800 0%, #ffc107 100%); color: #ffffff; box-shadow: 0 3px 10px rgba(255,152,0,0.3); }
+        .btn-retry:hover { box-shadow: 0 6px 16px rgba(255,152,0,0.4); }
+        .btn-next { background: linear-gradient(135deg, #9c27b0 0%, #ba68c8 100%); box-shadow: 0 3px 10px rgba(156,39,176,0.3); }
+        .btn-next:hover { box-shadow: 0 6px 16px rgba(156,39,176,0.4); }
+        .btn-reset { background: linear-gradient(135deg, #f44336 0%, #ef5350 100%); box-shadow: 0 3px 10px rgba(244,67,54,0.3); }
+        .btn-reset:hover { box-shadow: 0 6px 16px rgba(244,67,54,0.4); }
+
+        .api-key-input { width: 100%; padding: 12px 16px; background: #fafafa; border: 2px solid #e0e0e0; color: #1b5e20; font-family: inherit; font-size: 10px; outline: none; border-radius: 14px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.05); transition: all 0.3s; line-height: 1.4; }
+        .api-key-input:focus { border-color: #66bb6a; box-shadow: 0 0 0 4px rgba(102,187,106,0.15), inset 0 2px 6px rgba(0,0,0,0.05); background: #ffffff; }
+        .api-key-input::placeholder { color: #9e9e9e; }
+        .loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 16px; border-radius: 20px; z-index: 10; }
+        .loading-overlay.show { display: flex; }
+        .pixel-loader { width: 50px; height: 50px; background: none; border: 4px solid #c8e6c9; border-top-color: #4caf50; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: #1b5e20; font-size: 11px; font-weight: 500; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .result-card { margin-top: 14px; padding: 16px; border-radius: 16px; display: none; box-shadow: 0 3px 12px rgba(0,0,0,0.08); position: relative; z-index: 1; }
+        .result-card.show { display: block; animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-card.success { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #a5d6a7; }
+        .result-card.fail { background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%); border: 2px solid #ef9a9a; }
+        .result-card.error { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border: 2px solid #ffcc80; }
+
+        .result-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .result-icon { font-size: 18px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: #4caf50; color: #fff; border-radius: 12px; box-shadow: 0 3px 10px rgba(76,175,80,0.3); }
+        .result-card.fail .result-icon { background: #f44336; box-shadow: 0 3px 10px rgba(244,67,54,0.3); }
+        .result-card.error .result-icon { background: #ff9800; box-shadow: 0 3px 10px rgba(255,152,0,0.3); }
+
+        .result-title { font-size: 11px; font-weight: 600; color: #1b5e20; line-height: 1.4; }
+        .result-reason { font-size: 10px; line-height: 1.6; margin-top: 8px; color: #424242; }
+        .result-type { display: inline-block; padding: 6px 14px; background: #4caf50; color: #fff; font-size: 9px; font-weight: 500; margin-top: 10px; border-radius: 16px; box-shadow: 0 2px 6px rgba(76,175,80,0.25); }
+        .result-card.fail .result-type { background: #f44336; box-shadow: 0 2px 8px rgba(244,67,54,0.25); }
+        .result-card.error .result-type { background: #ff9800; box-shadow: 0 2px 8px rgba(255,152,0,0.25); }
+
+        .action-buttons { margin-top: 16px; display: none; }
+        .action-buttons.show { display: flex; gap: 12px; }
+
+        .status-bar { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); color: #1b5e20; padding: 12px 18px; margin-top: 14px; border-radius: 14px; font-size: 10px; font-weight: 500; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: relative; z-index: 1; }
+        .status-level { color: #2e7d32; font-weight: 700; }
+        .status-dot { width: 9px; height: 9px; background: #4caf50; border-radius: 50%; animation: pulse 1.5s ease-in-out infinite; box-shadow: 0 0 0 3.5px rgba(76,175,80,0.2); }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
+
+        .sound-toggle { position: fixed; top: 20px; right: 20px; z-index: 5000; padding: 14px; background: #ffffff; border: none; color: #1b5e20; font-size: 18px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 16px; transition: all 0.3s; }
+        .sound-toggle:hover { background: #e8f5e9; transform: translateY(-3px) scale(1.05); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+        .sound-toggle:active { transform: translateY(-1px) scale(0.98); }
+
+        .confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 1000; }
+        .confetti-piece { position: absolute; width: 10px; height: 10px; animation: confetti-fall 2.5s ease-out forwards; border-radius: 2px; }
+        @keyframes confetti-fall { 0% { transform: translateY(-30px) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+
+        .animation-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.98); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .animation-overlay.show { display: flex; }
+        .animation-container { background: #ffffff; padding: 32px; border-radius: 32px; box-shadow: 0 12px 48px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
+        .animation-container::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100px; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); z-index: 0; }
+        .animation-container::after { content: ''; position: absolute; bottom: -100px; right: -100px; width: 250px; height: 250px; background: #ffecb3; border-radius: 50%; z-index: 0; }
+        .animation-title { font-size: 14px; color: #ffffff; margin-bottom: 24px; text-align: center; font-weight: 700; position: relative; z-index: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.1); line-height: 1.4; }
+
+        .transition-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); z-index: 3000; display: none; flex-direction: column; justify-content: center; align-items: center; gap: 24px; overflow: hidden; }
+        .transition-overlay::before { content: ''; position: absolute; top: -120px; left: -120px; width: 400px; height: 400px; background: #4caf50; border-radius: 50%; opacity: 0.3; animation: float 6s ease-in-out infinite; }
+        .transition-overlay::after { content: ''; position: absolute; bottom: -150px; right: -150px; width: 500px; height: 500px; background: #ffc107; border-radius: 50%; opacity: 0.3; animation: float 8s ease-in-out infinite reverse; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+        .transition-overlay.show { display: flex; animation: fadeInOut 2.5s ease; }
+        @keyframes fadeInOut { 0% { opacity: 0; } 25% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+        .transition-text { font-size: 14px; color: #1b5e20; font-weight: 700; position: relative; z-index: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.4; }
+        .transition-level { font-size: 20px; color: #2e7d32; font-weight: 800; position: relative; z-index: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        .dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center; z-index: 2500; backdrop-filter: blur(8px); }
+        .dialog-overlay.show { display: flex; }
+        .dialog-box { background: #ffffff; padding: 32px; border-radius: 32px; box-shadow: 0 16px 48px rgba(0,0,0,0.2); max-width: 380px; width: 90%; text-align: center; position: relative; overflow: hidden; }
+        .dialog-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 70px; background: linear-gradient(135deg, #ffecb3 0%, #ffc107 100%); z-index: 0; }
+        .dialog-text { font-size: 12px; line-height: 1.7; margin-bottom: 24px; color: #1b5e20; font-weight: 500; position: relative; z-index: 1; padding-top: 10px; }
+        .dialog-btn { padding: 14px 32px; font-family: inherit; font-size: 11px; font-weight: 600; border: none; background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%); color: #fff; cursor: pointer; border-radius: 16px; box-shadow: 0 4px 12px rgba(46,125,50,0.3); transition: all 0.3s; position: relative; z-index: 1; }
+        .dialog-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 20px rgba(46,125,50,0.4); }
+        .dialog-btn:active { transform: translateY(-1px) scale(0.98); box-shadow: 0 2px 8px rgba(46,125,50,0.3); }
+
+        .start-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #87ceeb 0%, #e8f5e9 50%, #c8e6c9 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 4000; overflow: hidden; padding: 20px; }
+        .start-screen::before { content: ''; position: absolute; top: -150px; left: -150px; width: 500px; height: 500px; background: #4caf50; border-radius: 50%; opacity: 0.2; animation: float 8s ease-in-out infinite; }
+        .start-screen::after { content: ''; position: absolute; bottom: -200px; right: -200px; width: 600px; height: 600px; background: #ffc107; border-radius: 50%; opacity: 0.2; animation: float 10s ease-in-out infinite reverse; }
+        
+        /* 装饰性元素 */
+        .start-decoration { position: absolute; font-size: 36px; opacity: 0.8; z-index: 0; }
+        .start-star { top: 8%; left: 10%; animation: twinkle 1.5s ease-in-out infinite; }
+        .start-star2 { top: 12%; right: 15%; animation: twinkle 1.8s ease-in-out infinite 0.5s; }
+        .start-paper1 { top: 20%; left: 5%; animation: float-paper 3s ease-in-out infinite; }
+        .start-paper2 { top: 25%; right: 8%; animation: float-paper 3.5s ease-in-out infinite 0.8s; }
+        .start-paper3 { bottom: 30%; left: 8%; animation: float-paper 4s ease-in-out infinite 1.2s; }
+        
+        @keyframes twinkle { 0%,100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+        @keyframes float-paper { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-15px) rotate(10deg); } }
+        
+        /* 标题 */
+        .start-title { margin-bottom: 30px; text-align: center; position: relative; z-index: 1; }
+        .title-line1 { font-size: 18px; color: #2e7d32; margin-bottom: 10px; font-weight: 700; text-shadow: 0 3px 6px rgba(0,0,0,0.15); line-height: 1.4; letter-spacing: 2px; }
+        .title-line2 { font-size: 11px; color: #66bb6a; font-weight: 500; letter-spacing: 1px; }
+        
+        /* 关卡介绍 */
+        .start-info { display: flex; gap: 25px; margin-bottom: 25px; position: relative; z-index: 1; }
+        .info-card { background: rgba(255,255,255,0.95); padding: 20px; border-radius: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); text-align: center; width: 180px; transition: all 0.3s; }
+        .info-card:hover { transform: translateY(-6px) scale(1.03); box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
+        .info-icon { font-size: 42px; margin-bottom: 10px; display: block; }
+        .info-title { font-size: 10px; color: #1b5e20; font-weight: 700; margin-bottom: 8px; }
+        .info-text { font-size: 9px; color: #666; line-height: 1.8; }
+        
+        /* 提示 */
+        .start-hint { background: rgba(255,255,255,0.9); padding: 12px 24px; border-radius: 12px; margin-bottom: 25px; font-size: 10px; color: #2e7d32; text-align: center; position: relative; z-index: 1; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+        
+        /* 开始按钮 */
+        .start-btn { padding: 20px 55px; font-family: inherit; font-size: 12px; font-weight: 700; border: none; background: linear-gradient(135deg, #2e7d32 0%, #43a047 50%, #66bb6a 100%); color: #fff; cursor: pointer; border-radius: 50px; box-shadow: 0 8px 25px rgba(46,125,50,0.4); transition: all 0.3s; position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+        .start-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 12px 35px rgba(46,125,50,0.5); }
+        .start-btn:active { transform: translateY(-2px) scale(0.98); box-shadow: 0 4px 16px rgba(46,125,50,0.4); }
+        .btn-arrow { display: inline-block; animation: pulse-arrow 1s ease-in-out infinite; }
+        @keyframes pulse-arrow { 0%,100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+        
+        /* 底部特性 */
+        .start-footer { display: flex; gap: 20px; margin-top: 30px; position: relative; z-index: 1; }
+        .footer-item { background: rgba(255,255,255,0.85); padding: 10px 18px; border-radius: 12px; font-size: 9px; color: #2e7d32; box-shadow: 0 3px 8px rgba(0,0,0,0.08); }
+
+        /* 胜利结算 */
+        .victory-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1e3a5f 0%, #0c2340 100%); z-index: 5000; display: none; justify-content: center; align-items: center; overflow: hidden; }
+        .victory-overlay.show { display: flex; animation: victory-in 1s ease-out; }
+        @keyframes victory-in { 
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; } 
+            50% { transform: scale(1.1) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .victory-overlay::before { content: ''; position: absolute; top: -150px; left: -150px; width: 400px; height: 400px; background: #ff4500; border-radius: 50%; opacity: 0.3; animation: float 6s ease-in-out infinite; }
+        .victory-overlay::after { content: ''; position: absolute; bottom: -200px; right: -200px; width: 500px; height: 500px; background: #ffc107; border-radius: 50%; opacity: 0.3; animation: float 8s ease-in-out infinite reverse; }
+        .victory-container { position: relative; z-index: 1; text-align: center; padding: 40px; background: rgba(255,255,255,0.98); border-radius: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .victory-title { font-size: 30px; color: #1b5e20; font-weight: 900; margin-bottom: 30px; text-shadow: 3px 3px 6px rgba(0,0,0,0.15); line-height: 1.4; }
+        .victory-items { display: flex; justify-content: center; gap: 30px; margin-bottom: 30px; }
+        .victory-item { display: flex; flex-direction: column; align-items: center; gap: 10px; animation: bounce 1s ease-in-out infinite; }
+        .victory-item:nth-child(2) { animation-delay: 0.2s; }
+        .victory-item:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .victory-item-icon { font-size: 50px; }
+        .victory-item-name { font-size: 12px; color: #2e7d32; font-weight: 600; }
+        .victory-subtitle { font-size: 14px; color: #1b5e20; margin-bottom: 25px; font-weight: 500; line-height: 1.6; }
+        .victory-btn { padding: 16px 48px; font-family: inherit; font-size: 12px; font-weight: 700; border: none; background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%); color: #fff; cursor: pointer; border-radius: 20px; box-shadow: 0 6px 20px rgba(76,175,80,0.4); transition: all 0.3s; }
+        .victory-btn:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 10px 32px rgba(76,175,80,0.5); }
+        .victory-btn:active { transform: translateY(-1px) scale(0.98); box-shadow: 0 4px 16px rgba(76,175,80,0.4); }
+
+        /* 烟花效果 */
+        .firework { position: absolute; width: 4px; height: 4px; border-radius: 50%; animation: firework-burst 1.5s ease-out forwards; }
+        @keyframes firework-burst { 
+            0% { transform: scale(1); opacity: 1; } 
+            50% { transform: scale(2.5); opacity: 0.9; } 
+            100% { transform: scale(0); opacity: 0; } 
+        }
+        
+        /* 开屏白色粒子 */
+        .start-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .start-particle { position: absolute; background: rgba(255,255,255,0.9); border-radius: 50%; animation: particleFallWithDrift linear infinite; box-shadow: 0 0 6px rgba(255,255,255,0.6); }
+        @keyframes particleFallWithDrift { 
+            0% { transform: translate(0, -50px) rotate(0deg); opacity: 0; } 
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translate(var(--drift, 0), 100vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* 彩带粒子 */
+        .confetti-piece { position: absolute; animation: confetti-fall 3s ease-out forwards; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        @keyframes confetti-fall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+        .game-title { font-size: 18px; color: #1b5e20; text-align: center; margin: 30px 0 20px; font-weight: 800; position: relative; z-index: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.08); letter-spacing: 2px; line-height: 1.4; }
+        .level-progress { display: flex; gap: 14px; margin-top: 14px; justify-content: center; position: relative; z-index: 1; }
+        .level-dot { width: 16px; height: 16px; background: #e0e0e0; border-radius: 50%; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .level-dot.active { background: #4caf50; transform: scale(1.3); box-shadow: 0 4px 12px rgba(76,175,80,0.4); }
+        .level-dot.completed { background: #81c784; transform: scale(1.15); box-shadow: 0 4px 12px rgba(129,199,132,0.4); }
+
+        @media (max-width: 768px) {
+            .game-container { 
+                flex-direction: column; 
+                padding: 12px; 
+                gap: 16px; 
+                max-width: 100%;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .scene-section { 
+                width: 100%; 
+                min-width: 100%; 
+                padding: 16px;
+                max-width: 100%;
+                flex: none;
+            }
+            .camera-section { 
+                width: 100%; 
+                min-width: 100%; 
+                position: relative; 
+                top: 0;
+                flex: none;
+            }
+            .scene-canvas { 
+                width: 100%; 
+                height: auto;
+                display: block;
+            }
+            .btn-group { 
+                flex-direction: column;
+                width: 100%;
+            }
+            .pixel-btn { 
+                width: 100%; 
+                text-align: center; 
+                padding: 14px 16px; 
+                font-size: 9px;
+                box-sizing: border-box;
+            }
+            .start-screen { 
+                padding: 20px 12px; 
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .start-info { 
+                flex-direction: column; 
+                gap: 12px; 
+                width: 100%;
+            }
+            .title-line1 { font-size: 13px; letter-spacing: 1px; }
+            .title-line2 { font-size: 9px; }
+            .info-card { 
+                width: 100%; 
+                padding: 14px;
+                box-sizing: border-box;
+            }
+            .info-title { font-size: 10px; }
+            .info-text { font-size: 8px; line-height: 1.8; }
+            .game-title { 
+                font-size: 13px; 
+                margin: 16px 0 10px;
+                padding: 0 10px;
+            }
+            .section-title { 
+                font-size: 11px; 
+                margin-bottom: 14px;
+                padding: 0 5px;
+            }
+            .sound-toggle { 
+                top: 10px; 
+                right: 10px; 
+                padding: 10px; 
+                font-size: 16px;
+                z-index: 10000;
+            }
+            .start-btn { 
+                padding: 14px 32px; 
+                font-size: 10px;
+                width: auto;
+            }
+            .start-footer { 
+                flex-wrap: wrap; 
+                gap: 8px;
+                justify-content: center;
+            }
+            .footer-item { padding: 8px 12px; font-size: 8px; }
+            .dialog-box { 
+                padding: 20px; 
+                max-width: 92%;
+                width: 92%;
+                box-sizing: border-box;
+            }
+            .dialog-text { 
+                font-size: 10px; 
+                line-height: 1.8;
+            }
+            .dialog-btn { 
+                font-size: 10px; 
+                padding: 12px 28px;
+            }
+            .victory-container { 
+                padding: 24px 16px; 
+                width: 92%;
+                box-sizing: border-box;
+            }
+            .victory-title { 
+                font-size: 20px;
+                line-height: 1.3;
+            }
+            .victory-subtitle { 
+                font-size: 11px;
+                line-height: 1.6;
+            }
+            .victory-items { 
+                gap: 12px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .victory-item-name { font-size: 10px; }
+            .victory-item-icon { font-size: 32px; }
+            .victory-btn { 
+                padding: 14px 28px; 
+                font-size: 10px;
+            }
+            .transition-text { font-size: 11px; }
+            .transition-level { font-size: 16px; }
+            .animation-title { font-size: 11px; }
+            .status-bar { 
+                padding: 10px 12px; 
+                font-size: 8px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .api-key-input { 
+                font-size: 9px; 
+                padding: 12px 12px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .result-card { 
+                padding: 12px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .result-title { font-size: 10px; line-height: 1.4; }
+            .result-reason { font-size: 9px; line-height: 1.7; }
+            .result-type { font-size: 8px; padding: 5px 12px; }
+            .camera-wrapper { border-radius: 12px; }
+            .scene-section::before { height: 56px; }
+            .camera-section::before { height: 48px; }
+        }
+        /* 指导视频区域 */
+        .video-section {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 16px;
+            margin-top: 16px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .video-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 44px;
+            background: linear-gradient(135deg, #ff9800 0%, #ffc107 100%);
+            border-radius: 20px 20px 0 0;
+            z-index: 0;
+        }
+        
+        .video-title {
+            font-size: 12px;
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 14px;
+            position: relative;
+            z-index: 1;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .guide-video {
+            width: 100%;
+            border-radius: 12px;
+            border: 2px solid #ffecb3;
+            background: #000;
+            display: none;
+        }
+        
+        .guide-video.active {
+            display: block;
+        }
+        
+        .video-label {
+            font-size: 10px;
+            color: #ff9800;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .video-hint {
+            font-size: 9px;
+            color: #666;
+            margin-top: 6px;
+            text-align: center;
+        }
+        
+        .video-tip {
+            font-size: 8px;
+            color: #ff9800;
+            margin-top: 8px;
+            text-align: center;
+            padding: 8px;
+            background: #fff3e0;
+            border-radius: 8px;
+            border: 1px solid #ffe0b2;
+        }
+        
+        .video-error {
+            padding: 20px;
+            text-align: center;
+            color: #f44336;
+            background: #ffebee;
+            border-radius: 12px;
+            border: 2px solid #ef9a9a;
+            font-size: 10px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 480px) {
+            .game-container { padding: 10px; gap: 12px; }
+            .scene-section { padding: 14px; border-radius: 24px; }
+            .camera-section { padding: 12px; border-radius: 20px; }
+            .title-line1 { font-size: 12px; }
+            .title-line2 { font-size: 8px; }
+            .game-title { font-size: 11px; }
+            .section-title { font-size: 10px; }
+            .pixel-btn { padding: 12px 14px; font-size: 8px; }
+            .info-card { padding: 12px; }
+            .dialog-box { padding: 18px; }
+            .dialog-text { font-size: 9px; }
+            .victory-title { font-size: 18px; }
+            .victory-container { padding: 20px 14px; }
+            .transition-text { font-size: 10px; }
+            .transition-level { font-size: 14px; }
+            .video-section { padding: 12px; }
+            .video-title { font-size: 10px; }
+            .video-label { font-size: 9px; }
+            .video-hint { font-size: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <button class="sound-toggle" id="soundToggle">🔊</button>
+
+    <div class="start-screen" id="startScreen">
+        <div class="start-particles" id="startParticles"></div>
+        <div class="start-decoration start-star">⭐</div>
+        <div class="start-decoration start-star2">✨</div>
+        <div class="start-decoration start-paper1">📄</div>
+        <div class="start-decoration start-paper2">✈️</div>
+        <div class="start-decoration start-paper3">⛵</div>
+        
+        <div class="start-title">
+            <div class="title-line1">折纸大冒险</div>
+            <div class="title-line2">创意通关之旅</div>
+        </div>
+        
+        <div class="start-info">
+            <div class="info-card">
+                <div class="info-icon">🚢</div>
+                <div class="info-title">关卡一</div>
+                <div class="info-text">折纸过河<br>帮助小精灵回家</div>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">🔥</div>
+                <div class="info-title">关卡二</div>
+                <div class="info-text">灭火过山<br>帮助孙悟空师徒</div>
+            </div>
+        </div>
+        
+        <div class="start-hint">
+            💡 折出指定物品，让AI识别通关！
+        </div>
+        
+        <div class="start-hint" style="background: #fff3e0; border: 2px solid #ffecb3; margin-top: 10px;">
+            📦 <strong>重要提示</strong>：请确保以下三个文件在同一文件夹中：<br>
+            <span style="font-size: 9px; color: #666; line-height: 2;">
+                • index(7).html<br>
+                • 微信视频2026-04-25_195057_528.mp4<br>
+                • 微信视频2026-04-25_210112_233.mp4
+            </span>
+        </div>
+        
+        <button class="start-btn" id="startGameBtn">
+            <span class="btn-text">开始冒险</span>
+            <span class="btn-arrow">▶</span>
+        </button>
+        
+        <div class="start-footer">
+            <div class="footer-item">🎨 创意折纸</div>
+            <div class="footer-item">🤖 AI识别</div>
+            <div class="footer-item">🏆 过关挑战</div>
+        </div>
+    </div>
+
+    <h1 class="game-title">★ 折纸大冒险 ★</h1>
+    <div class="level-progress">
+        <div class="level-dot active" id="dot1"></div>
+        <div class="level-dot" id="dot2"></div>
+    </div>
+
+    <div class="game-container">
+        <div class="scene-section">
+            <div class="section-title">游戏场景 · <span id="levelName">河流关</span></div>
+            <canvas id="sceneCanvas" class="scene-canvas" width="650" height="380"></canvas>
+            <div class="status-bar">
+                <span>关卡: <span id="levelDisplay" class="status-level">1</span> / 2</span>
+                <div class="status-indicator"><div class="status-dot"></div><span>游戏进行中</span></div>
+            </div>
+        </div>
+
+        <div class="camera-section">
+            <div class="section-title">折纸识别区域</div>
+            <div class="camera-wrapper">
+                <video id="cameraPreview" class="camera-preview" autoplay playsinline></video>
+                <div id="cameraPlaceholder" class="camera-placeholder">等待摄像头...</div>
+                <div class="scan-line"></div>
+                <div id="loadingOverlay" class="loading-overlay">
+                    <div class="pixel-loader"></div>
+                    <div class="loading-text">识别中...</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <input type="text" id="apiKeyInput" class="api-key-input" placeholder="API Key（可选）">
+                <div class="btn-group"><button id="startBtn" class="pixel-btn btn-start">▶ 开始游戏</button></div>
+                <div id="captureGroup" class="btn-group" style="display: none;"><button id="captureBtn" class="pixel-btn btn-capture" disabled>📷 拍照识别</button></div>
+                <div id="actionButtons" class="action-buttons">
+                    <button id="retryBtn" class="pixel-btn btn-retry">↺ 再来一次</button>
+                    <button id="nextBtn" class="pixel-btn btn-next">▶ 下一关</button>
+                </div>
+                <div class="btn-group"><button id="resetBtn" class="pixel-btn btn-reset" style="display: none;">↺ 重置游戏</button></div>
+            </div>
+
+            <div id="resultCard" class="result-card">
+                <div class="result-header">
+                    <div id="resultIcon" class="result-icon">?</div>
+                    <div id="resultTitle" class="result-title">结果</div>
+                </div>
+                <div id="resultReason" class="result-reason"></div>
+                <div id="resultType" class="result-type"></div>
+            </div>
+        </div>
+        
+        <div class="video-section">
+            <div class="video-title">📽️ 过关指导</div>
+            <video id="guideVideo1" class="guide-video" controls onerror="handleVideoError(1)">
+                <source src="微信视频2026-04-25_195057_528.mp4" type="video/mp4">
+                <div class="video-error">❌ 视频加载失败！<br>请确保视频文件 "微信视频2026-04-25_195057_528.mp4" 与HTML文件在同一目录。</div>
+            </video>
+            <video id="guideVideo2" class="guide-video" controls onerror="handleVideoError(2)">
+                <source src="微信视频2026-04-25_210112_233.mp4" type="video/mp4">
+                <div class="video-error">❌ 视频加载失败！<br>请确保视频文件 "微信视频2026-04-25_210112_233.mp4" 与HTML文件在同一目录。</div>
+            </video>
+            <div class="video-label" id="videoLabel">第1关：折纸过河指导</div>
+            <div class="video-hint">观看视频学习如何折纸过关！</div>
+            <div class="video-tip">💡 提示：分享时请同时发送两个视频文件！</div>
+        </div>
+    </div>
+
+    <div id="confetti" class="confetti"></div>
+
+    <div id="animationOverlay" class="animation-overlay">
+        <div class="animation-container">
+            <div class="animation-title" id="animationTitle">★ 通关动画 ★</div>
+            <canvas id="animationCanvas" class="scene-canvas" width="320" height="200"></canvas>
+            <div id="animationProgress" style="margin-top: 10px; color: #ff5722; font-size: 11px; text-align: center;">准备中...</div>
+        </div>
+    </div>
+
+    <div id="victoryOverlay" class="victory-overlay">
+        <div class="victory-container">
+            <div class="victory-title">胜利</div>
+            <div class="victory-items">
+                <div class="victory-item">
+                    <div class="victory-item-icon">🚢</div>
+                    <div class="victory-item-name">纸船</div>
+                </div>
+                <div class="victory-item">
+                    <div class="victory-item-icon">✈️</div>
+                    <div class="victory-item-name">纸飞机</div>
+                </div>
+                <div class="victory-item">
+                    <div class="victory-item-icon">🪭</div>
+                    <div class="victory-item-name">扇子</div>
+                </div>
+            </div>
+            <div class="victory-subtitle">在小精灵和孙悟空的帮助下，成功通关！</div>
+            <button class="victory-btn" onclick="resetGame()">再玩一次</button>
+        </div>
+    </div>
+
+    <div id="transitionOverlay" class="transition-overlay">
+        <div class="transition-text" id="transitionText">即将进入</div>
+        <div class="transition-level" id="transitionLevel">第二关</div>
+    </div>
+
+    <div class="dialog-overlay" id="dialogOverlay">
+        <div class="dialog-box">
+            <div class="dialog-text" id="dialogText"></div>
+            <button class="dialog-btn" id="dialogBtn">确定</button>
+        </div>
+    </div>
+
+    <script>
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
+
+        const LEVELS = [
+            {
+                name: "河流关",
+                themeColor: "#4ade80",
+                bgGradient: ["#1e3a5f", "#0c2340"],
+                prompt: `你是一个专业的折纸识别和创意判断引擎。当前关卡目标：玩家面前有一条宽阔的河流，需要到达对岸。用户展示了一件手工折纸作品。
+
+请仔细观察图片，识别折纸的具体类型（如：纸飞机、纸船、纸伞、纸桥、纸鸟、纸气球等），然后判断这件折纸能否以合理、有创意的方式帮助玩家过河。
+
+识别要求：
+- 仔细分析折纸的形状、结构和特征
+- 准确判断折纸的具体类型
+- 不要猜测，只基于图片内容进行判断
+
+评级标准：
+- 优秀：折纸类型明确，结构完整，非常适合帮助过河
+- 中等：折纸类型可识别，结构基本完整，有一定帮助过河的可能性
+- 差劲：折纸类型不明确，结构不完整，无法帮助过河
+
+输出格式必须是严格的 JSON：
+{
+"rating": "优秀/中等/差劲",
+"reason": "简短的中文理由",
+"type": "折纸类型（如：纸飞机、纸船、纸伞、纸桥、纸鸟、纸气球、其他）"
+}
+
+不要输出任何其他文字。`,
+                successDialog: "小精灵：成功过河啦！",
+                failDialog: "折纸天使：让我们再来一次！"
+            },
+            {
+                name: "火焰山",
+                themeColor: "#e94560",
+                bgGradient: ["#5c1a1a", "#2d0a0a"],
+                prompt: `你是一个专业的折纸识别和创意判断引擎。当前关卡目标：孙悟空需要折出扇子才能把火焰山的火灭掉。用户展示了一件手工折纸作品。
+
+请仔细观察图片，识别折纸的具体类型，然后判断这件折纸能否作为扇子使用。
+
+识别要求：
+- 仔细分析折纸的形状和结构
+- 准确判断折纸的具体类型
+- 不要猜测，只基于图片内容进行判断
+
+评级标准：
+- 优秀：折纸类型明确为扇子，结构完整，扇叶清晰
+- 中等：折纸类型可识别为扇子，结构基本完整
+- 差劲：折纸类型不明确，结构不完整，不像扇子
+
+输出格式必须是严格的 JSON：
+{
+"rating": "优秀/中等/差劲",
+"reason": "简短的中文理由",
+"type": "折纸类型（如：扇子、其他）"
+}
+
+不要输出任何其他文字。`,
+                successDialog: "孙悟空：师傅！可以过山了！",
+                failDialog: "孙悟空：让俺老孙再试一次！"
+            }
+        ];
+
+        const DEMO_ITEMS = [
+            { type: "扇子", rating: "优秀", reason: "这是一把扇子！扇动起来可以扇灭火焰！" },
+            { type: "纸飞机", rating: "差劲", reason: "这是纸飞机，虽然能飞，但不能扇风灭火！" },
+            { type: "纸船", rating: "差劲", reason: "这是纸船，在水上能用，但不能扇风灭火！" },
+            { type: "纸伞", rating: "中等", reason: "这是纸伞，虽然不是扇子，但可以用来扇风！" },
+            { type: "其他", rating: "差劲", reason: "这看起来不像扇子，无法用来扇灭火焰！" },
+        ];
+
+        const LEVEL_TRANSITIONS = {
+            1: { next: 2, text: "即将进入", levelName: "火焰山" },
+            2: { next: null, text: "恭喜通关", levelName: "全部关卡" }
+        };
+
+        let stream = null, currentLevel = 1, hasPassed = false, gameStarted = false, soundEnabled = true;
+        let sceneCanvas, ctx, cameraPreview, cameraPlaceholder, apiKeyInput, startBtn, captureGroup, captureBtn;
+        let actionButtons, retryBtn, nextBtn, resetBtn, loadingOverlay, resultCard;
+        let resultIcon, resultTitle, resultReason, resultType, confettiContainer, levelDisplay, levelName;
+        let animationOverlay, animationTitle, animationCanvas, animationCtx, animationProgress;
+        let dialogOverlay, dialogText, dialogBtn, startScreen, transitionOverlay, transitionText, transitionLevel;
+        let soundToggle, audioContext, ambientSource, currentAmbient = null;
+        let guideVideo1, guideVideo2, videoLabel;
+
+        let gameState = {
+            level: 1,
+            totalAttempts: 0,
+            levelAttempts: {},
+            startTime: null,
+            completedLevels: []
+        };
+
+        function initElements() {
+            sceneCanvas = document.getElementById('sceneCanvas');
+            ctx = sceneCanvas.getContext('2d');
+            cameraPreview = document.getElementById('cameraPreview');
+            cameraPlaceholder = document.getElementById('cameraPlaceholder');
+            apiKeyInput = document.getElementById('apiKeyInput');
+            startBtn = document.getElementById('startBtn');
+            captureGroup = document.getElementById('captureGroup');
+            captureBtn = document.getElementById('captureBtn');
+            actionButtons = document.getElementById('actionButtons');
+            retryBtn = document.getElementById('retryBtn');
+            nextBtn = document.getElementById('nextBtn');
+            resetBtn = document.getElementById('resetBtn');
+            loadingOverlay = document.getElementById('loadingOverlay');
+            resultCard = document.getElementById('resultCard');
+            resultIcon = document.getElementById('resultIcon');
+            resultTitle = document.getElementById('resultTitle');
+            resultReason = document.getElementById('resultReason');
+            resultType = document.getElementById('resultType');
+            confettiContainer = document.getElementById('confetti');
+            levelDisplay = document.getElementById('levelDisplay');
+            levelName = document.getElementById('levelName');
+            animationOverlay = document.getElementById('animationOverlay');
+            animationTitle = document.getElementById('animationTitle');
+            animationCanvas = document.getElementById('animationCanvas');
+            animationCtx = animationCanvas.getContext('2d');
+            animationProgress = document.getElementById('animationProgress');
+            dialogOverlay = document.getElementById('dialogOverlay');
+            dialogText = document.getElementById('dialogText');
+            dialogBtn = document.getElementById('dialogBtn');
+            startScreen = document.getElementById('startScreen');
+            transitionOverlay = document.getElementById('transitionOverlay');
+            transitionText = document.getElementById('transitionText');
+            transitionLevel = document.getElementById('transitionLevel');
+            soundToggle = document.getElementById('soundToggle');
+            victoryOverlay = document.getElementById('victoryOverlay');
+            startParticles = document.getElementById('startParticles');
+            guideVideo1 = document.getElementById('guideVideo1');
+            guideVideo2 = document.getElementById('guideVideo2');
+            videoLabel = document.getElementById('videoLabel');
+        }
+        
+        function updateGuideVideo() {
+            guideVideo1.classList.remove('active');
+            guideVideo2.classList.remove('active');
+            
+            if (currentLevel === 1) {
+                guideVideo1.classList.add('active');
+                videoLabel.textContent = '第1关：折纸过河指导';
+            } else {
+                guideVideo2.classList.add('active');
+                videoLabel.textContent = '第2关：灭火过山指导';
+            }
+        }
+        
+        function handleVideoError(level) {
+            console.log(`第${level}关视频加载失败`);
+            // 这里可以添加更多的错误处理逻辑，比如显示替代内容等
+        }
+        
+        function createStartParticles() {
+            if (!startParticles) return;
+            startParticles.innerHTML = '';
+            
+            const particleCount = 50;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'start-particle';
+                
+                const size = Math.random() * 8 + 4;
+                const left = Math.random() * 100;
+                const delay = Math.random() * 6;
+                const duration = Math.random() * 4 + 6;
+                const horizontalDrift = (Math.random() - 0.5) * 30;
+                
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = left + '%';
+                particle.style.animationDelay = delay + 's';
+                particle.style.animationDuration = duration + 's';
+                
+                // 添加水平漂移效果
+                particle.style.animationName = 'particleFallWithDrift';
+                particle.style.setProperty('--drift', horizontalDrift + 'px');
+                
+                startParticles.appendChild(particle);
+            }
+        }
+
+        function playVictorySound() {
+            if (!soundEnabled || !audioContext) return;
+            
+            // 胜利旋律（多个音符依次播放）
+            const notes = [523, 659, 784, 1047, 784, 1047, 1319];
+            
+            notes.forEach((freq, index) => {
+                setTimeout(() => {
+                    playTone(freq, 0.4, 'sine', 0.25);
+                }, index * 200);
+            });
+            
+            // 低音伴奏
+            setTimeout(() => {
+                playTone(262, 0.8, 'square', 0.15);
+            }, 400);
+        }
+
+        function playVictoryScreen() {
+            victoryOverlay.classList.add('show');
+            playVictorySound();
+            
+            // 清除旧的粒子
+            const oldParticles = victoryOverlay.querySelectorAll('.firework, .confetti-piece');
+            oldParticles.forEach(p => p.remove());
+            
+            // 大量彩带粒子效果
+            const colors = ['#ff4500', '#ffc107', '#4caf50', '#2196f3', '#9c27b0', '#ff69b4', '#00ffff', '#ff00ff'];
+            
+            // 分批次创建粒子
+            for (let batch = 0; batch < 5; batch++) {
+                setTimeout(() => {
+                    for (let i = 0; i < 15; i++) {
+                        setTimeout(() => {
+                            const confetti = document.createElement('div');
+                            confetti.className = 'confetti-piece';
+                            confetti.style.left = Math.random() * 100 + '%';
+                            confetti.style.top = '-20px';
+                            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                            confetti.style.width = (5 + Math.random() * 10) + 'px';
+                            confetti.style.height = (8 + Math.random() * 12) + 'px';
+                            confetti.style.borderRadius = Math.random() > 0.5 ? '2px' : '50%';
+                            confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+                            confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                            victoryOverlay.appendChild(confetti);
+                            
+                            setTimeout(() => {
+                                if (confetti.parentNode) {
+                                    confetti.parentNode.removeChild(confetti);
+                                }
+                            }, 4500);
+                        }, i * 80);
+                    }
+                }, batch * 400);
+            }
+            
+            // 烟花效果（爆炸式）
+            for (let i = 0; i < 12; i++) {
+                setTimeout(() => {
+                    const x = 20 + Math.random() * 60;
+                    const y = 10 + Math.random() * 40;
+                    
+                    for (let j = 0; j < 8; j++) {
+                        setTimeout(() => {
+                            const firework = document.createElement('div');
+                            firework.className = 'firework';
+                            firework.style.left = x + '%';
+                            firework.style.top = y + '%';
+                            firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                            firework.style.width = (8 + Math.random() * 12) + 'px';
+                            firework.style.height = firework.style.width;
+                            victoryOverlay.appendChild(firework);
+                            
+                            setTimeout(() => {
+                                if (firework.parentNode) {
+                                    firework.parentNode.removeChild(firework);
+                                }
+                            }, 2000);
+                        }, j * 40);
+                    }
+                }, i * 500);
+            }
+        }
+
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                console.log('Web Audio API not supported');
+            }
+        }
+
+        function playTone(frequency, duration, type = 'sine', volume = 0.3) {
+            if (!soundEnabled || !audioContext) return;
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function playSuccessSound() {
+            if (!soundEnabled) return;
+            playTone(523, 0.15, 'square', 0.2);
+            setTimeout(() => playTone(659, 0.15, 'square', 0.2), 100);
+            setTimeout(() => playTone(784, 0.2, 'square', 0.2), 200);
+        }
+
+        function playFailSound() {
+            if (!soundEnabled) return;
+            playTone(200, 0.3, 'sawtooth', 0.15);
+            setTimeout(() => playTone(150, 0.4, 'sawtooth', 0.15), 200);
+        }
+
+        function playClickSound() {
+            if (!soundEnabled) return;
+            playTone(800, 0.05, 'square', 0.1);
+        }
+
+        function playTransitionSound() {
+            if (!soundEnabled) return;
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => playTone(300 + i * 100, 0.2, 'sine', 0.15), i * 150);
+            }
+        }
+
+        function playAmbientSound(type) {
+            if (!soundEnabled || !audioContext) return;
+            stopAmbientSound();
+
+            const bufferSize = 2 * audioContext.sampleRate;
+            const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+
+            if (type === 'river') {
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * 0.02;
+                }
+            } else if (type === 'fire') {
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = (Math.random() * 2 - 1) * 0.03;
+                }
+            }
+
+            currentAmbient = audioContext.createBufferSource();
+            currentAmbient.buffer = noiseBuffer;
+            currentAmbient.loop = true;
+
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'lowpass';
+
+            if (type === 'river') {
+                filter.frequency.setValueAtTime(400, audioContext.currentTime);
+            } else if (type === 'fire') {
+                filter.frequency.setValueAtTime(800, audioContext.currentTime);
+            }
+
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+
+            currentAmbient.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            currentAmbient.start();
+        }
+
+        function stopAmbientSound() {
+            if (currentAmbient) {
+                try { currentAmbient.stop(); } catch(e) {}
+                currentAmbient = null;
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+            if (!soundEnabled) {
+                stopAmbientSound();
+            } else {
+                if (gameStarted) {
+                    playAmbientSound(currentLevel === 1 ? 'river' : 'fire');
+                }
+            }
+            playClickSound();
+        }
+
+        function loadApiKey() {
+            const saved = localStorage.getItem('gemini_api_key');
+            if (saved) apiKeyInput.value = saved;
+            const savedSound = localStorage.getItem('sound_enabled');
+            if (savedSound !== null) soundEnabled = savedSound === 'true';
+            soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+        }
+
+        function saveApiKey() { localStorage.setItem('gemini_api_key', apiKeyInput.value); }
+        function saveSoundSetting() { localStorage.setItem('sound_enabled', soundEnabled); }
+
+        function updateLevelDots() {
+            for (let i = 1; i <= 2; i++) {
+                const dot = document.getElementById(`dot${i}`);
+                dot.classList.remove('active', 'completed');
+                if (i < currentLevel) {
+                    dot.classList.add('completed');
+                } else if (i === currentLevel) {
+                    dot.classList.add('active');
+                }
+            }
+        }
+
+        function drawScene() {
+            const W = sceneCanvas.width, H = sceneCanvas.height;
+            ctx.clearRect(0, 0, W, H);
+            const pixelSize = 4;
+
+            if (currentLevel === 1) {
+                // --- 第1关：像素风格河流场景 ---
+                
+                // 像素天空
+                const skyColors = ['#87ceeb', '#98d8eb', '#a8e0f0', '#b8e8f5', '#c8f0fa'];
+                for (let y = 0; y < H * 0.45; y += pixelSize) {
+                    const colorIndex = Math.floor(y / (H * 0.45 / skyColors.length));
+                    ctx.fillStyle = skyColors[Math.min(colorIndex, skyColors.length - 1)];
+                    for (let x = 0; x < W; x += pixelSize) {
+                        ctx.fillRect(x, y, pixelSize, pixelSize);
+                    }
+                }
+
+                // 像素云朵（静止不动）
+                ctx.fillStyle = '#ffffff';
+                const cloudPositions = [{x: 40, y: 30}, {x: 180, y: 40}, {x: 380, y: 25}];
+                cloudPositions.forEach(cloud => {
+                    for (let i = 0; i < 12; i++) {
+                        ctx.fillRect(
+                            cloud.x + (i % 4) * pixelSize * 3,
+                            cloud.y + Math.floor(i / 4) * pixelSize * 2,
+                            pixelSize * 2,
+                            pixelSize * 2
+                        );
+                    }
+                });
+
+                // 像素草地
+                const grassY = H * 0.45;
+                ctx.fillStyle = '#81c784';
+                for (let y = grassY; y < H; y += pixelSize) {
+                    for (let x = 0; x < W; x += pixelSize) {
+                        ctx.fillRect(x, y, pixelSize, pixelSize);
+                    }
+                }
+
+                // 像素河流（从中间穿过）
+                const riverY = H * 0.5;
+                const riverWidth = W * 0.5;
+                const riverStart = W * 0.25;
+                
+                const waterColors = ['#4169e1', '#1e90ff', '#00bfff', '#87ceeb'];
+                for (let y = riverY; y < H * 0.75; y += pixelSize) {
+                    const colorIndex = Math.floor((y - riverY) / ((H * 0.75 - riverY) / waterColors.length));
+                    ctx.fillStyle = waterColors[colorIndex];
+                    for (let x = riverStart; x < riverStart + riverWidth; x += pixelSize) {
+                        ctx.fillRect(x, y, pixelSize, pixelSize);
+                    }
+                }
+
+                // 河流波浪装饰
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 5; i++) {
+                    const waveY = riverY + 20 + i * 30;
+                    const waveOffset = Math.sin(Date.now() * 0.001 + i) * pixelSize * 2;
+                    for (let x = riverStart + 20; x < riverStart + riverWidth - 20; x += pixelSize * 6) {
+                        ctx.fillRect(x + waveOffset, waveY, pixelSize * 3, pixelSize);
+                    }
+                }
+
+                // 像素草地细节
+                ctx.fillStyle = '#a5d6a7';
+                for (let y = grassY; y < H; y += pixelSize * 4) {
+                    for (let x = 0; x < riverStart - 20; x += pixelSize * 6) {
+                        ctx.fillRect(x, y, pixelSize, pixelSize);
+                    }
+                    for (let x = riverStart + riverWidth + 20; x < W; x += pixelSize * 6) {
+                        ctx.fillRect(x, y, pixelSize, pixelSize);
+                    }
+                }
+
+                // 像素树木
+                function drawPixelTree(x, y, scale) {
+                    // 树干
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(x - pixelSize * scale, y - pixelSize * 3 * scale, pixelSize * 2 * scale, pixelSize * 6 * scale);
+                    // 树冠
+                    ctx.fillStyle = '#228b22';
+                    for (let layer = 0; layer < 4; layer++) {
+                        const layerWidth = (5 - layer) * pixelSize * scale;
+                        const layerY = y - (5 + layer * 2) * pixelSize * scale;
+                        for (let i = -layerWidth / 2; i <= layerWidth / 2; i += pixelSize * scale) {
+                            ctx.fillRect(x + i, layerY, pixelSize * scale, pixelSize * scale);
+                        }
+                    }
+                }
+                
+                // 左侧树木
+                drawPixelTree(60, H * 0.6, 1);
+                drawPixelTree(100, H * 0.68, 0.9);
+                drawPixelTree(140, H * 0.62, 0.95);
+                
+                // 右侧树木
+                drawPixelTree(W - 70, H * 0.65, 1);
+                drawPixelTree(W - 110, H * 0.7, 0.9);
+                drawPixelTree(W - 150, H * 0.63, 0.95);
+
+                // 像素小房子（家）
+                const houseX = W - 80;
+                const houseY = H * 0.58;
+                // 房子主体
+                ctx.fillStyle = '#fff8dc';
+                ctx.fillRect(houseX - pixelSize * 6, houseY, pixelSize * 12, pixelSize * 10);
+                // 屋顶
+                ctx.fillStyle = '#cd5c5c';
+                ctx.beginPath();
+                ctx.moveTo(houseX, houseY - pixelSize * 5);
+                ctx.lineTo(houseX + pixelSize * 8, houseY);
+                ctx.lineTo(houseX - pixelSize * 8, houseY);
+                ctx.closePath();
+                ctx.fill();
+                // 门
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(houseX - pixelSize * 1.5, houseY + pixelSize * 5, pixelSize * 3, pixelSize * 5);
+                // 窗户
+                ctx.fillStyle = '#87ceeb';
+                ctx.fillRect(houseX - pixelSize * 4.5, houseY + pixelSize * 2.5, pixelSize * 2.5, pixelSize * 2.5);
+                ctx.fillRect(houseX + pixelSize * 2, houseY + pixelSize * 2.5, pixelSize * 2.5, pixelSize * 2.5);
+
+                // 像素小人角色
+                const charX = 70;
+                const charY = H * 0.68;
+                const bounce = Math.sin(Date.now() * 0.003) * pixelSize;
+
+                // 头发
+                ctx.fillStyle = '#2c1810';
+                ctx.fillRect(charX - pixelSize * 2, charY - pixelSize * 4 + bounce, pixelSize * 5, pixelSize * 2);
+                ctx.fillRect(charX - pixelSize * 3, charY - pixelSize * 3 + bounce, pixelSize, pixelSize * 2);
+                ctx.fillRect(charX + pixelSize * 2, charY - pixelSize * 3 + bounce, pixelSize, pixelSize * 2);
+
+                // 脸
+                ctx.fillStyle = '#ffdab9';
+                ctx.fillRect(charX - pixelSize * 2, charY - pixelSize * 2 + bounce, pixelSize * 5, pixelSize * 3);
+
+                // 眼睛
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(charX - pixelSize * 0.8, charY - pixelSize * 1.2 + bounce, pixelSize * 0.8, pixelSize * 0.8);
+                ctx.fillRect(charX + pixelSize * 1.8, charY - pixelSize * 1.2 + bounce, pixelSize * 0.8, pixelSize * 0.8);
+
+                // 眼睛高光
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(charX - pixelSize * 0.6, charY - pixelSize * 1.3 + bounce, pixelSize * 0.4, pixelSize * 0.4);
+                ctx.fillRect(charX + pixelSize * 2, charY - pixelSize * 1.3 + bounce, pixelSize * 0.4, pixelSize * 0.4);
+
+                // 嘴巴
+                ctx.fillStyle = '#8b0000';
+                ctx.fillRect(charX + pixelSize * 0.5, charY + pixelSize * 0.2 + bounce, pixelSize, pixelSize * 0.6);
+
+                // 身体
+                ctx.fillStyle = '#4caf50';
+                ctx.fillRect(charX - pixelSize * 2.5, charY + pixelSize + bounce, pixelSize * 5, pixelSize * 4);
+
+                // 袖子
+                ctx.fillStyle = '#81c784';
+                ctx.fillRect(charX - pixelSize * 3.5, charY + pixelSize + bounce, pixelSize, pixelSize * 3);
+                ctx.fillRect(charX + pixelSize * 2.5, charY + pixelSize + bounce, pixelSize, pixelSize * 3);
+
+                // 裤子
+                ctx.fillStyle = '#2196f3';
+                ctx.fillRect(charX - pixelSize * 2.5, charY + pixelSize * 5 + bounce, pixelSize * 5, pixelSize * 3);
+
+                // 腿
+                ctx.fillStyle = '#1976d2';
+                ctx.fillRect(charX - pixelSize * 2.5, charY + pixelSize * 8 + bounce, pixelSize * 2, pixelSize * 2.5);
+                ctx.fillRect(charX + pixelSize * 0.5, charY + pixelSize * 8 + bounce, pixelSize * 2, pixelSize * 2.5);
+
+                // 鞋子
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(charX - pixelSize * 3, charY + pixelSize * 10.5 + bounce, pixelSize * 2.5, pixelSize);
+                ctx.fillRect(charX + pixelSize * 0.5, charY + pixelSize * 10.5 + bounce, pixelSize * 2.5, pixelSize);
+
+                // 像素文字标识
+                ctx.fillStyle = '#228b22';
+                ctx.font = 'bold 14px "Courier New", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('🏠 家', W - 60, grassY + 15);
+                ctx.fillText('📍 起点', 55, grassY + 15);
+
+            } else if (currentLevel === 2) {
+                // --- 第2关：像素风格火焰山场景 ---
+
+                // 像素天空
+                const skyColors = ['#ffebee', '#ffcdd2', '#ef9a9a', '#e57373', '#ef5350'];
+                for (let y = 0; y < H * 0.45; y += pixelSize) {
+                    const colorIndex = Math.floor(y / (H * 0.45 / skyColors.length));
+                    ctx.fillStyle = skyColors[Math.min(colorIndex, skyColors.length - 1)];
+                    for (let x = 0; x < W; x += pixelSize) {
+                        ctx.fillRect(x, y, pixelSize, pixelSize);
+                    }
+                }
+
+                // 像素太阳（简化，无闪烁）
+                const sunX = W * 0.8, sunY = 40;
+                ctx.fillStyle = '#ffc107';
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillRect(sunX + pixelSize, sunY + i * pixelSize, pixelSize * 8, pixelSize);
+                }
+                ctx.fillStyle = '#ffeb3b';
+                for (let i = 1; i < 4; i++) {
+                    ctx.fillRect(sunX + i * pixelSize, sunY + pixelSize, pixelSize * 6, pixelSize);
+                }
+
+                // 像素火焰山
+                const mountainY = H * 0.45;
+                ctx.fillStyle = '#8b0000';
+                for (let x = 0; x < W; x += pixelSize * 2) {
+                    const height = 40 + Math.sin(x * 0.03) * 25;
+                    for (let y = 0; y < height; y += pixelSize) {
+                        ctx.fillRect(x, mountainY - y, pixelSize * 2, pixelSize);
+                    }
+                }
+
+                // 火焰山石
+                ctx.fillStyle = '#cd853f';
+                for (let x = 0; x < W; x += pixelSize * 6) {
+                    for (let y = 0; y < H * 0.18; y += pixelSize * 3) {
+                        ctx.fillRect(x, mountainY + y, pixelSize * 3, pixelSize * 2);
+                    }
+                }
+
+                // 像素火焰（简化版，轻微动画）
+                const flameTime = Date.now() * 0.002;
+                for (let i = 0; i < 12; i++) {
+                    const x = (i * W / 12) + pixelSize * 2;
+                    const baseY = mountainY - pixelSize * 3;
+                    const flicker = Math.sin(flameTime + i * 0.5) * pixelSize;
+                    
+                    // 火焰
+                    for (let j = 0; j < 6; j++) {
+                        const size = (6 - j) * pixelSize;
+                        const y = baseY - j * pixelSize + flicker;
+                        
+                        if (j < 2) {
+                            ctx.fillStyle = '#ffff00';
+                        } else if (j < 4) {
+                            ctx.fillStyle = '#ff9800';
+                        } else {
+                            ctx.fillStyle = '#f44336';
+                        }
+                        
+                        ctx.fillRect(x - size / 2, y, size, pixelSize);
+                    }
+                }
+
+                // 像素地面
+                const groundY = H * 0.55;
+                ctx.fillStyle = '#cd853f';
+                for (let y = groundY; y < H; y += pixelSize) {
+                    for (let x = 0; x < W; x += pixelSize) {
+                        ctx.fillRect(x, y, pixelSize, pixelSize);
+                    }
+                }
+
+                // 地面石头
+                ctx.fillStyle = '#a1887f';
+                for (let x = 0; x < W; x += pixelSize * 8) {
+                    for (let y = groundY + pixelSize * 3; y < H - pixelSize * 2; y += pixelSize * 5) {
+                        ctx.fillRect(x, y, pixelSize * 3, pixelSize * 2);
+                    }
+                }
+
+                // 像素孙悟空角色（重新设计）
+                const charX = 80;
+                const charY = groundY - pixelSize * 3;
+                const bounce = Math.sin(Date.now() * 0.0025) * pixelSize;
+
+                // 身体
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(charX - pixelSize * 2.5, charY - pixelSize * 2 + bounce, pixelSize * 5, pixelSize * 4);
+
+                // 头
+                ctx.fillStyle = '#ffdab9';
+                ctx.fillRect(charX - pixelSize * 2, charY - pixelSize * 3 + bounce, pixelSize * 4, pixelSize * 3);
+
+                // 眼睛
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(charX - pixelSize * 1.5, charY - pixelSize * 2.2 + bounce, pixelSize, pixelSize);
+                ctx.fillRect(charX + pixelSize * 0.5, charY - pixelSize * 2.2 + bounce, pixelSize, pixelSize);
+
+                // 眼睛高光
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(charX - pixelSize * 1.3, charY - pixelSize * 2.4 + bounce, pixelSize * 0.4, pixelSize * 0.4);
+                ctx.fillRect(charX + pixelSize * 0.7, charY - pixelSize * 2.4 + bounce, pixelSize * 0.4, pixelSize * 0.4);
+
+                // 嘴巴
+                ctx.fillStyle = '#8b0000';
+                ctx.fillRect(charX - pixelSize * 0.5, charY - pixelSize * 1 + bounce, pixelSize * 2, pixelSize * 0.7);
+
+                // 金箍
+                ctx.fillStyle = '#ff9800';
+                ctx.fillRect(charX - pixelSize * 2.5, charY - pixelSize * 4 + bounce, pixelSize * 5, pixelSize * 0.8);
+
+                // 身体
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(charX - pixelSize * 3, charY + pixelSize * 2 + bounce, pixelSize * 6, pixelSize * 5);
+
+                // 腿
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(charX - pixelSize * 2.5, charY + pixelSize * 7 + bounce, pixelSize * 2, pixelSize * 3);
+                ctx.fillRect(charX + pixelSize * 0.5, charY + pixelSize * 7 + bounce, pixelSize * 2, pixelSize * 3);
+
+                // 金箍棒
+                ctx.strokeStyle = '#8b4513';
+                ctx.lineWidth = pixelSize * 1.5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(charX - pixelSize * 4, charY + pixelSize * 4 + bounce);
+                ctx.lineTo(charX + pixelSize * 4, charY + pixelSize * 2 + bounce);
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffd700';
+                ctx.fillRect(charX - pixelSize * 4.5, charY + pixelSize * 4.3 + bounce, pixelSize * 1.5, pixelSize * 0.8);
+                ctx.fillRect(charX + pixelSize * 3, charY + pixelSize * 1.7 + bounce, pixelSize * 1.5, pixelSize * 0.8);
+
+                // 像素文字标识
+                ctx.fillStyle = '#8b0000';
+                ctx.font = 'bold 14px "Courier New", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('🔥 火焰山', W / 2, groundY + 18);
+                ctx.fillText('取经路 →', W - 55, groundY + 18);
+            }
+        }
+
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 640, height: 480 } });
+                cameraPreview.srcObject = stream;
+                cameraPreview.style.display = 'block';
+                cameraPlaceholder.style.display = 'none';
+            } catch (err) {
+                cameraPlaceholder.textContent = '无法访问摄像头';
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        function captureFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = cameraPreview.videoWidth;
+            canvas.height = cameraPreview.videoHeight;
+            canvas.getContext('2d').drawImage(cameraPreview, 0, 0);
+            return canvas.toDataURL('image/jpeg', 0.8);
+        }
+
+        async function callGeminiAPI(base64Image, apiKey) {
+            const url = `${GEMINI_API_URL}?key=${apiKey}`;
+            const body = {
+                contents: [{ parts: [{ text: LEVELS[currentLevel - 1].prompt }, { inlineData: { mimeType: 'image/jpeg', data: base64Image.split(',')[1] } }] }]
+            };
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000);
+
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: controller.signal });
+                clearTimeout(timeout);
+                if (!response.ok) throw new Error(`API 失败: ${response.status}`);
+                const data = await response.json();
+                if (!data.candidates?.[0]?.content) throw new Error('返回格式异常');
+                return JSON.parse(data.candidates[0].content.parts[0].text);
+            } catch (err) {
+                clearTimeout(timeout);
+                if (err.name === 'AbortError') throw new Error('请求超时（15秒）');
+                throw err;
+            }
+        }
+
+        function getRandomDemoResult() {
+            return DEMO_ITEMS[Math.floor(Math.random() * DEMO_ITEMS.length)];
+        }
+
+        function showLoading(show) {
+            loadingOverlay.classList.toggle('show', show);
+            if (captureBtn) captureBtn.disabled = show;
+        }
+
+        function hideResult() {
+            resultCard.classList.remove('show', 'success', 'fail', 'error');
+        }
+
+        function showResult(pass, reason, type, isError = false) {
+            hideResult();
+            if (isError) {
+                resultCard.classList.add('error', 'show');
+                resultIcon.textContent = '!';
+                resultTitle.textContent = '出错了';
+            } else if (pass) {
+                resultCard.classList.add('success', 'show');
+                resultIcon.textContent = '★';
+                resultTitle.textContent = '通关成功';
+            } else {
+                resultCard.classList.add('fail', 'show');
+                resultIcon.textContent = 'X';
+                resultTitle.textContent = '识别失败';
+            }
+            resultReason.textContent = reason;
+            resultType.textContent = `类型: ${type}`;
+            resultType.style.display = type && type !== '其他' ? 'inline-block' : 'none';
+        }
+
+        function showActionBtn(pass) {
+            actionButtons.classList.add('show');
+            retryBtn.style.display = pass ? 'none' : 'inline-block';
+            nextBtn.style.display = pass ? 'inline-block' : 'none';
+        }
+
+        function hideActionBtn() { actionButtons.classList.remove('show'); }
+
+        function createConfetti() {
+            confettiContainer.innerHTML = '';
+            const colors = ['#4caf50', '#66bb6a', '#ffc107', '#ffeb3b', '#2196f3', '#e91e63'];
+            for (let i = 0; i < 80; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = Math.random() * 0.6 + 's';
+                confettiContainer.appendChild(piece);
+            }
+            setTimeout(() => confettiContainer.innerHTML = '', 3000);
+        }
+
+        function showDialog(text, callback) {
+            playClickSound();
+            dialogText.textContent = text;
+            dialogOverlay.classList.add('show');
+            dialogBtn.onclick = () => {
+                playClickSound();
+                dialogOverlay.classList.remove('show');
+                if (callback) callback();
+            };
+        }
+
+        async function showLevelTransition() {
+            return new Promise((resolve) => {
+                const transition = LEVEL_TRANSITIONS[currentLevel];
+                transitionText.textContent = transition.text;
+                transitionLevel.textContent = transition.levelName;
+                transitionOverlay.classList.add('show');
+                playTransitionSound();
+
+                setTimeout(() => {
+                    transitionOverlay.classList.remove('show');
+                    resolve();
+                }, 2000);
+            });
+        }
+
+        async function playIntroAnimation() {
+            return new Promise((resolve) => {
+                animationTitle.textContent = `★ 第${currentLevel}关 · ${LEVELS[currentLevel - 1].name} ★`;
+                animationOverlay.classList.add('show');
+
+                const W = 420, H = 260;
+                animationCanvas.width = W;
+                animationCanvas.height = H;
+                let frame = 0;
+                let charX = 40;
+
+                function draw() {
+                    if (currentLevel === 1) {
+                        const g = animationCtx.createLinearGradient(0, 0, 0, H);
+                        g.addColorStop(0, '#1e3a5f');
+                        g.addColorStop(1, '#0c2340');
+                        animationCtx.fillStyle = g;
+                        animationCtx.fillRect(0, 0, W, H);
+
+                        const landTop = H * 0.35;
+                        animationCtx.fillStyle = '#166534';
+                        animationCtx.fillRect(0, landTop, W * 0.15, H - landTop);
+                        animationCtx.fillRect(W * 0.85, landTop, W * 0.15, H - landTop);
+
+                        animationCtx.fillStyle = '#1e40af';
+                        for (let x = W * 0.15; x < W * 0.85; x += 8) {
+                            const wave = Math.sin((x + frame * 2) * 0.05) * 3;
+                            for (let y = landTop + 4; y < H * 0.7; y += 6) {
+                                if (Math.random() > 0.3) {
+                                    animationCtx.fillStyle = (x + y) % 2 === 0 ? '#1e40af' : '#1d4ed8';
+                                    animationCtx.fillRect(x, y + wave, 6, 4);
+                                }
+                            }
+                        }
+
+                        if (charX < 100) charX += 0.5;
+                        const bounce = Math.sin(frame * 0.1) * 2;
+                        animationCtx.fillStyle = '#fbbf24';
+                        animationCtx.beginPath();
+                        animationCtx.arc(charX, landTop - 20 + bounce, 8, 0, Math.PI * 2);
+                        animationCtx.fill();
+                        animationCtx.fillStyle = '#333';
+                        animationCtx.beginPath();
+                        animationCtx.arc(charX - 3, landTop - 23 + bounce, 1.5, 0, Math.PI * 2);
+                        animationCtx.arc(charX + 3, landTop - 23 + bounce, 1.5, 0, Math.PI * 2);
+                        animationCtx.fill();
+                    } else {
+                        const g = animationCtx.createLinearGradient(0, 0, 0, H);
+                        g.addColorStop(0, '#5c1a1a');
+                        g.addColorStop(1, '#2d0a0a');
+                        animationCtx.fillStyle = g;
+                        animationCtx.fillRect(0, 0, W, H);
+
+                        for (let i = 0; i < 15; i++) {
+                            const flicker = Math.sin(Date.now() * 0.01 + i) * 0.3 + 0.5;
+                            animationCtx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, ${flicker * 0.5})`;
+                            animationCtx.beginPath();
+                            animationCtx.arc(Math.random() * W, Math.random() * H * 0.6, 4, 0, Math.PI * 2);
+                            animationCtx.fill();
+                        }
+
+                        const landY = H * 0.7;
+                        animationCtx.fillStyle = '#78350f';
+                        animationCtx.fillRect(0, landY, W, H - landY);
+
+                        if (charX < 80) charX += 0.5;
+                        const bounce = Math.sin(frame * 0.1) * 2;
+                        animationCtx.fillStyle = '#fbbf24';
+                        animationCtx.beginPath();
+                        animationCtx.arc(charX, landY - 30 + bounce, 8, 0, Math.PI * 2);
+                        animationCtx.fill();
+                        animationCtx.fillStyle = '#333';
+                        animationCtx.beginPath();
+                        animationCtx.arc(charX - 3, landY - 34 + bounce, 1.5, 0, Math.PI * 2);
+                        animationCtx.arc(charX + 3, landY - 34 + bounce, 1.5, 0, Math.PI * 2);
+                        animationCtx.fill();
+                        animationCtx.fillStyle = '#fbbf24';
+                        animationCtx.beginPath();
+                        animationCtx.arc(charX - 15, landY - 40 + bounce, 6, 0, Math.PI * 2);
+                        animationCtx.fill();
+                        animationCtx.fillStyle = '#78350f';
+                        animationCtx.fillRect(charX - 20, landY - 35 + bounce, 8, 16);
+                    }
+
+                    animationProgress.textContent = `加载中... ${Math.floor((frame / 60) * 100)}%`;
+                }
+
+                function animate() {
+                    draw();
+                    frame++;
+                    if (frame < 90) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        setTimeout(() => {
+                            animationOverlay.classList.remove('show');
+                            resolve();
+                        }, 300);
+                    }
+                }
+                animate();
+            });
+        }
+
+        async function playFanAnimation() {
+            return new Promise((resolve) => {
+                animationTitle.textContent = '★ 扇灭火焰 ★';
+                animationOverlay.classList.add('show');
+                playSuccessSound();
+
+                const W = 420, H = 260;
+                animationCanvas.width = W;
+                animationCanvas.height = H;
+                let frame = 0;
+                let fanX = 80, fanY = 100;
+                let flameIntensity = 1;
+                const pixelSize = 3;
+
+                function draw() {
+                    const pixelSizeLocal = 3;
+                    // 像素天空（从红色渐变到蓝色）
+                    const skyR1 = Math.floor(135 + flameIntensity * 120);
+                    const skyG1 = Math.floor(206 - flameIntensity * 56);
+                    const skyB1 = Math.floor(235 - flameIntensity * 135);
+                    const skyR2 = Math.floor(100 + flameIntensity * 100);
+                    const skyG2 = Math.floor(180 - flameIntensity * 60);
+                    const skyB2 = Math.floor(220 - flameIntensity * 120);
+                    const skyColor1 = `rgb(${skyR1}, ${skyG1}, ${skyB1})`;
+                    const skyColor2 = `rgb(${skyR2}, ${skyG2}, ${skyB2})`;
+                    for (let y = 0; y < H * 0.45; y += pixelSizeLocal) {
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            animationCtx.fillStyle = y < H * 0.225 ? skyColor1 : skyColor2;
+                            animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                        }
+                    }
+
+                    // 像素太阳（随火焰亮度变化）
+                    const sunX = W * 0.8, sunY = 30;
+                    const sunColor = flameIntensity > 0.3 ? '#ff6b6b' : '#ffc107';
+                    animationCtx.fillStyle = sunColor;
+                    for (let i = 0; i < 5; i++) {
+                        for (let j = 0; j < 5; j++) {
+                            if (Math.abs(i - 2) + Math.abs(j - 2) <= 2.5) {
+                                animationCtx.fillRect(sunX + i * pixelSizeLocal - pixelSizeLocal * 2.5, sunY + j * pixelSizeLocal - pixelSizeLocal * 2.5, pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+
+                    // 像素背景（火焰山变草地）
+                    const mountainY = H * 0.45;
+                    if (flameIntensity > 0.3) {
+                        // 火焰山
+                        const mountainColor = '#8b0000';
+                        animationCtx.fillStyle = mountainColor;
+                        for (let x = 0; x < W; x += pixelSizeLocal * 3) {
+                            const height = 40 + Math.sin(x * 0.02) * 15;
+                            for (let y = 0; y < height; y += pixelSizeLocal) {
+                                animationCtx.fillRect(x, mountainY - y, pixelSizeLocal * 3, pixelSizeLocal);
+                            }
+                        }
+                    } else {
+                        // 草地绿树
+                        const treeColors = ['#228b22', '#32cd32', '#2e8b57', '#3cb371'];
+                        for (let x = 0; x < W; x += pixelSizeLocal * 6) {
+                            const treeHeight = 30 + Math.random() * 20;
+                            const treeColor = treeColors[Math.floor(Math.random() * treeColors.length)];
+                            animationCtx.fillStyle = treeColor;
+                            for (let h = 0; h < treeHeight; h += pixelSizeLocal) {
+                                const width = Math.max(pixelSizeLocal * 2, pixelSizeLocal * 6 - (h / treeHeight) * pixelSizeLocal * 4);
+                                animationCtx.fillRect(x - width / 2, mountainY - h, width, pixelSizeLocal);
+                            }
+                            animationCtx.fillStyle = '#8b4513';
+                            animationCtx.fillRect(x - pixelSizeLocal, mountainY, pixelSizeLocal * 2, pixelSizeLocal * 4);
+                        }
+                    }
+
+                    // 像素火焰（随强度变化大小和数量）
+                    const flameTime = Date.now() * 0.005;
+                    const flameCount = Math.floor(15 * flameIntensity);
+                    for (let i = 0; i < flameCount; i++) {
+                        const x = (i * W / 15) + Math.sin(flameTime + i * 0.5) * pixelSizeLocal * 3;
+                        const baseY = mountainY - pixelSizeLocal * 4;
+                        const maxHeight = pixelSizeLocal * 8 * flameIntensity;
+                        
+                        for (let j = 0; j < Math.ceil(maxHeight / pixelSizeLocal); j++) {
+                            const size = (maxHeight - j * pixelSizeLocal) / pixelSizeLocal;
+                            const y = baseY - j * pixelSizeLocal;
+                            let fireColor;
+                            if (j < 3 * flameIntensity) {
+                                fireColor = '#ffff00';
+                            } else if (j < 6 * flameIntensity) {
+                                fireColor = '#ff8c00';
+                            } else {
+                                fireColor = '#ff4500';
+                            }
+                            animationCtx.globalAlpha = 1;
+                            animationCtx.fillStyle = fireColor;
+                            if (size > 0) {
+                                animationCtx.fillRect(x - size * pixelSizeLocal / 2, y, size * pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+
+                    // 像素地面（完全变绿）
+                    const groundY = H * 0.5;
+                    const groundColor1 = `rgb(${Math.floor(144 + flameIntensity * 110)}, ${Math.floor(238 - flameIntensity * 38)}, ${Math.floor(144 + flameIntensity * 20)})`;
+                    const groundColor2 = `rgb(${Math.floor(129 + flameIntensity * 120)}, ${Math.floor(199 - flameIntensity * 20)}, ${Math.floor(132 + flameIntensity * 10)})`;
+                    for (let y = groundY; y < H; y += pixelSizeLocal) {
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            if (Math.random() > 0.2) {
+                                animationCtx.fillStyle = y < groundY + (H - groundY) / 2 ? groundColor1 : groundColor2;
+                                animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+                    
+                    // 草地细节（绿色时）
+                    if (flameIntensity <= 0.3) {
+                        // 草地点缀
+                        animationCtx.fillStyle = '#90ee90';
+                        for (let y = groundY + pixelSizeLocal * 2; y < H; y += pixelSizeLocal * 5) {
+                            for (let x = pixelSizeLocal * 2; x < W; x += pixelSizeLocal * 7) {
+                                if (Math.random() > 0.5) {
+                                    animationCtx.fillRect(x, y, pixelSizeLocal * 2, pixelSizeLocal * 2);
+                                }
+                            }
+                        }
+                        // 小花
+                        const flowerColors = ['#ff69b4', '#ffd700', '#ff4500', '#9370db', '#00ff7f'];
+                        for (let i = 0; i < 8; i++) {
+                            const fx = W * 0.1 + i * W * 0.1;
+                            const fy = H * 0.7 + Math.sin(i * 1.5) * 15;
+                            animationCtx.fillStyle = flowerColors[i % flowerColors.length];
+                            animationCtx.fillRect(fx - pixelSizeLocal, fy - pixelSizeLocal, pixelSizeLocal * 2, pixelSizeLocal * 2);
+                        }
+                    }
+
+                    // 像素扇子 + 孙悟空
+                    const fanAngle = Math.sin(frame * 0.2) * 0.4;
+                    animationCtx.save();
+                    animationCtx.translate(fanX, fanY);
+                    animationCtx.rotate(fanAngle);
+
+                    // 扇子
+                    animationCtx.fillStyle = '#8b4513';
+                    for (let i = 0; i < 5; i++) {
+                        const width = (5 - i) * pixelSizeLocal * 1.5;
+                        animationCtx.fillRect(-width / 2, -i * pixelSizeLocal, width, pixelSizeLocal);
+                    }
+                    animationCtx.fillStyle = '#fff8dc';
+                    for (let i = 0; i < 3; i++) {
+                        const width = (4 - i) * pixelSizeLocal * 1.2;
+                        animationCtx.fillRect(-width / 2, -i * pixelSizeLocal - pixelSizeLocal * 2, width, pixelSizeLocal);
+                    }
+
+                    animationCtx.restore();
+
+                    // 孙悟空角色
+                    const charX = fanX, charY = fanY + pixelSizeLocal * 6;
+                    const monBounce = Math.sin(frame * 0.08) * pixelSizeLocal;
+                    // 身体
+                    animationCtx.fillStyle = '#ffd700';
+                    animationCtx.fillRect(charX - pixelSizeLocal * 2, charY - pixelSizeLocal * 2 + monBounce, pixelSizeLocal * 4, pixelSizeLocal * 4);
+                    // 脸
+                    animationCtx.fillStyle = '#ffdab9';
+                    animationCtx.fillRect(charX - pixelSizeLocal * 1.5, charY - pixelSizeLocal * 1 + monBounce, pixelSizeLocal * 3, pixelSizeLocal * 2.5);
+                    // 眼睛
+                    animationCtx.fillStyle = '#000000';
+                    animationCtx.fillRect(charX - pixelSizeLocal * 0.8, charY + monBounce, pixelSizeLocal * 0.8, pixelSizeLocal * 0.8);
+                    animationCtx.fillRect(charX + pixelSizeLocal * 0.8, charY + monBounce, pixelSizeLocal * 0.8, pixelSizeLocal * 0.8);
+                    // 金箍
+                    animationCtx.fillStyle = '#ffc107';
+                    animationCtx.fillRect(charX - pixelSizeLocal * 2, charY - pixelSizeLocal * 3 + monBounce, pixelSizeLocal * 4, pixelSizeLocal * 0.8);
+
+                    // 动态显示火焰强度
+                    if (frame > 20) {
+                        flameIntensity = Math.max(0, flameIntensity - 0.012);
+                    }
+                    animationProgress.textContent = `扇灭火焰中... ${Math.floor((1 - flameIntensity) * 100)}%`;
+                }
+
+                function animate() {
+                    draw();
+                    frame++;
+                    if (frame < 130) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        animationProgress.textContent = '★ 火焰已灭！可以过山了！★';
+                        setTimeout(() => {
+                            animationOverlay.classList.remove('show');
+                            resolve();
+                        }, 500);
+                    }
+                }
+                animate();
+            });
+        }
+
+        async function playPaperBoatAnimation() {
+            return new Promise((resolve) => {
+                animationTitle.textContent = '★ 纸船过河 ★';
+                animationOverlay.classList.add('show');
+                playSuccessSound();
+
+                const W = 420, H = 260;
+                animationCanvas.width = W;
+                animationCanvas.height = H;
+                let boatX = 40, boatY = 100, frame = 0;
+                const pixelSize = 3;
+
+                function draw() {
+                    const pixelSizeLocal = 3;
+                    // 像素天空
+                    const skyColors = ['#87ceeb', '#98d8eb', '#a8e0f0', '#b8e8f5', '#c8f0fa'];
+                    for (let y = 0; y < H * 0.4; y += pixelSizeLocal) {
+                        const colorIndex = Math.floor(y / (H * 0.4 / skyColors.length));
+                        animationCtx.fillStyle = skyColors[Math.min(colorIndex, skyColors.length - 1)];
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                        }
+                    }
+
+                    // 像素云朵
+                    animationCtx.fillStyle = '#ffffff';
+                    const cloudPositions = [{ x: 30, y: 15 }, { x: 150, y: 25 }, { x: 250, y: 10 }];
+                    cloudPositions.forEach(cloud => {
+                        for (let i = 0; i < 8; i++) {
+                            animationCtx.fillRect(
+                                cloud.x + (i % 3) * pixelSizeLocal * 2,
+                                cloud.y + Math.floor(i / 3) * pixelSizeLocal,
+                                pixelSizeLocal * 2,
+                                pixelSizeLocal
+                            );
+                        }
+                    });
+
+                    // 像素地面
+                    const groundY = H * 0.45;
+                    animationCtx.fillStyle = '#90ee90';
+                    for (let y = groundY; y < H; y += pixelSizeLocal) {
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            if (Math.random() > 0.2) {
+                                animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+
+                    // 像素河流
+                    const riverY = H * 0.5;
+                    const waterColors = ['#4169e1', '#1e90ff', '#00bfff', '#87ceeb'];
+                    for (let y = riverY; y < H * 0.78; y += pixelSizeLocal) {
+                        const colorIndex = Math.floor((y - riverY) / ((H * 0.78 - riverY) / waterColors.length));
+                        animationCtx.fillStyle = waterColors[colorIndex];
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            const wave = Math.sin((x + frame * 2) * 0.04) * pixelSizeLocal;
+                            if (Math.random() > 0.2) {
+                                animationCtx.fillRect(x, y + wave, pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+
+                    // 像素纸船 + 小人
+                    const boatBounce = Math.sin(frame * 0.15) * pixelSizeLocal;
+
+                    // 船身
+                    animationCtx.fillStyle = '#ffffff';
+                    for (let i = 0; i < 4; i++) {
+                        const width = (4 - i) * pixelSizeLocal * 2;
+                        animationCtx.fillRect(boatX - width / 2, boatY + boatBounce + i * pixelSizeLocal, width, pixelSizeLocal);
+                    }
+                    // 船底
+                    animationCtx.fillStyle = '#f0f0f0';
+                    for (let i = 0; i < 2; i++) {
+                        animationCtx.fillRect(boatX - pixelSizeLocal * 2, boatY + boatBounce + (4 + i) * pixelSizeLocal, pixelSizeLocal * 4, pixelSizeLocal);
+                    }
+
+                    // 小人角色
+                    const charY = boatY - pixelSizeLocal * 6 + boatBounce;
+                    // 头发
+                    animationCtx.fillStyle = '#2c1810';
+                    animationCtx.fillRect(boatX - pixelSizeLocal * 1.5, charY - pixelSizeLocal * 3, pixelSizeLocal * 3, pixelSizeLocal * 1.5);
+                    // 脸
+                    animationCtx.fillStyle = '#ffdab9';
+                    animationCtx.fillRect(boatX - pixelSizeLocal * 1.5, charY - pixelSizeLocal * 1.5, pixelSizeLocal * 3, pixelSizeLocal * 2);
+                    // 眼睛
+                    animationCtx.fillStyle = '#000000';
+                    animationCtx.fillRect(boatX - pixelSizeLocal * 0.5, charY - pixelSizeLocal, pixelSizeLocal, pixelSizeLocal);
+                    animationCtx.fillRect(boatX + pixelSizeLocal * 0.5, charY - pixelSizeLocal, pixelSizeLocal, pixelSizeLocal);
+                    // 身体
+                    animationCtx.fillStyle = '#8b4513';
+                    animationCtx.fillRect(boatX - pixelSizeLocal * 1.5, charY + pixelSizeLocal, pixelSizeLocal * 3, pixelSizeLocal * 3);
+
+                    // 像素小房子（对岸的家）
+                    const houseX = W - 50, houseY = H * 0.4;
+                    animationCtx.fillStyle = '#fff8dc';
+                    animationCtx.fillRect(houseX, houseY, pixelSizeLocal * 8, pixelSizeLocal * 6);
+                    animationCtx.fillStyle = '#cd5c5c';
+                    animationCtx.fillRect(houseX - pixelSizeLocal * 2, houseY - pixelSizeLocal * 4, pixelSizeLocal * 12, pixelSizeLocal * 4);
+
+                    animationProgress.textContent = `划船中... ${Math.floor((boatX / W) * 100)}%`;
+                }
+
+                function animate() {
+                    draw();
+                    boatX += 2.5;
+                    frame++;
+                    if (frame < 120) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        animationProgress.textContent = '★ 到家了！★';
+                        setTimeout(() => {
+                            animationOverlay.classList.remove('show');
+                            resolve();
+                        }, 400);
+                    }
+                }
+                animate();
+            });
+        }
+
+        async function playPaperPlaneAnimation() {
+            return new Promise((resolve) => {
+                animationTitle.textContent = '★ 纸飞机飞过河 ★';
+                animationOverlay.classList.add('show');
+                playSuccessSound();
+
+                const W = 420, H = 260;
+                animationCanvas.width = W;
+                animationCanvas.height = H;
+                let planeX = 40, planeY = 70, frame = 0;
+                const pixelSize = 3;
+
+                function draw() {
+                    const pixelSizeLocal = 3;
+                    // 像素天空
+                    const skyColors = ['#87ceeb', '#98d8eb', '#a8e0f0', '#b8e8f5', '#c8f0fa'];
+                    for (let y = 0; y < H * 0.4; y += pixelSizeLocal) {
+                        const colorIndex = Math.floor(y / (H * 0.4 / skyColors.length));
+                        animationCtx.fillStyle = skyColors[Math.min(colorIndex, skyColors.length - 1)];
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                        }
+                    }
+
+                    // 像素云朵
+                    animationCtx.fillStyle = '#ffffff';
+                    const cloudPositions = [{ x: 50, y: 20 }, { x: 180, y: 10 }, { x: 280, y: 30 }];
+                    cloudPositions.forEach(cloud => {
+                        for (let i = 0; i < 6; i++) {
+                            animationCtx.fillRect(
+                                cloud.x + (i % 2) * pixelSizeLocal * 3,
+                                cloud.y + Math.floor(i / 2) * pixelSizeLocal,
+                                pixelSizeLocal * 3,
+                                pixelSizeLocal
+                            );
+                        }
+                    });
+
+                    // 像素地面
+                    const groundY = H * 0.5;
+                    animationCtx.fillStyle = '#90ee90';
+                    for (let y = groundY; y < H; y += pixelSizeLocal) {
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            if (Math.random() > 0.2) {
+                                animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+
+                    // 像素河流
+                    const riverY = H * 0.55;
+                    const waterColors = ['#4169e1', '#1e90ff', '#00bfff'];
+                    for (let y = riverY; y < H * 0.75; y += pixelSizeLocal) {
+                        const colorIndex = Math.floor((y - riverY) / ((H * 0.75 - riverY) / waterColors.length));
+                        animationCtx.fillStyle = waterColors[colorIndex];
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            if (Math.random() > 0.25) {
+                                animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+
+                    // 纸飞机飞行高度
+                    let currentY = planeY;
+                    if (planeX > W * 0.2 && planeX < W * 0.7) {
+                        currentY = planeY + Math.sin(frame * 0.12) * pixelSizeLocal * 3;
+                    } else if (planeX >= W * 0.7) {
+                        currentY = Math.min(groundY - pixelSizeLocal * 10, planeY + frame * 0.2);
+                    }
+
+                    // 像素纸飞机 + 小人
+                    animationCtx.save();
+                    animationCtx.translate(planeX, currentY);
+                    const angle = Math.sin(frame * 0.08) * 0.2;
+                    animationCtx.rotate(angle);
+
+                    // 飞机机身
+                    animationCtx.fillStyle = '#ffffff';
+                    animationCtx.fillRect(0, -pixelSizeLocal * 1.5, pixelSizeLocal * 5, pixelSizeLocal * 3);
+                    animationCtx.fillRect(pixelSizeLocal * 4, -pixelSizeLocal * 1.5, pixelSizeLocal * 4, pixelSizeLocal * 3);
+                    animationCtx.fillRect(pixelSizeLocal * 8, -pixelSizeLocal * 0.5, pixelSizeLocal * 2, pixelSizeLocal);
+                    // 机翼
+                    animationCtx.fillStyle = '#f0f0f0';
+                    animationCtx.fillRect(pixelSizeLocal * 2, -pixelSizeLocal * 3, pixelSizeLocal * 8, pixelSizeLocal * 1.5);
+                    animationCtx.fillRect(pixelSizeLocal * 2, pixelSizeLocal * 1.5, pixelSizeLocal * 8, pixelSizeLocal * 1.5);
+
+                    // 小人角色
+                    const charXLocal = pixelSizeLocal * 2, charYLocal = 0;
+                    // 头发
+                    animationCtx.fillStyle = '#2c1810';
+                    animationCtx.fillRect(charXLocal - pixelSizeLocal, charYLocal - pixelSizeLocal * 2, pixelSizeLocal * 2, pixelSizeLocal);
+                    // 脸
+                    animationCtx.fillStyle = '#ffdab9';
+                    animationCtx.fillRect(charXLocal - pixelSizeLocal, charYLocal - pixelSizeLocal, pixelSizeLocal * 2, pixelSizeLocal * 1.5);
+                    // 眼睛
+                    animationCtx.fillStyle = '#000000';
+                    animationCtx.fillRect(charXLocal - pixelSizeLocal * 0.3, charYLocal - pixelSizeLocal * 0.6, pixelSizeLocal * 0.6, pixelSizeLocal * 0.6);
+                    animationCtx.fillRect(charXLocal + pixelSizeLocal * 0.3, charYLocal - pixelSizeLocal * 0.6, pixelSizeLocal * 0.6, pixelSizeLocal * 0.6);
+
+                    animationCtx.restore();
+
+                    // 像素小房子（对岸的家）
+                    const houseX = W - 50, houseY = H * 0.42;
+                    animationCtx.fillStyle = '#fff8dc';
+                    animationCtx.fillRect(houseX, houseY, pixelSizeLocal * 8, pixelSizeLocal * 6);
+                    animationCtx.fillStyle = '#cd5c5c';
+                    animationCtx.fillRect(houseX - pixelSizeLocal * 2, houseY - pixelSizeLocal * 4, pixelSizeLocal * 12, pixelSizeLocal * 4);
+
+                    animationProgress.textContent = `飞行中... ${Math.floor((planeX / W) * 100)}%`;
+                }
+
+                function animate() {
+                    draw();
+                    planeX += 3.5;
+                    frame++;
+                    if (frame < 100) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        animationProgress.textContent = '★ 到达了！★';
+                        setTimeout(() => {
+                            animationOverlay.classList.remove('show');
+                            resolve();
+                        }, 400);
+                    }
+                }
+                animate();
+            });
+        }
+
+        async function playPaperUmbrellaAnimation() {
+            return new Promise((resolve) => {
+                animationTitle.textContent = '★ 纸伞过河 ★';
+                animationOverlay.classList.add('show');
+                playSuccessSound();
+
+                const W = 420, H = 260;
+                animationCanvas.width = W;
+                animationCanvas.height = H;
+                let umbrellaX = 50, umbrellaY = 85, frame = 0;
+                const pixelSize = 3;
+
+                function draw() {
+                    const pixelSizeLocal = 3;
+                    // 像素天空
+                    const skyColors = ['#a8e0f0', '#98d8eb', '#87ceeb', '#7fccec', '#78c0e8'];
+                    for (let y = 0; y < H * 0.4; y += pixelSizeLocal) {
+                        const colorIndex = Math.floor(y / (H * 0.4 / skyColors.length));
+                        animationCtx.fillStyle = skyColors[Math.min(colorIndex, skyColors.length - 1)];
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                        }
+                    }
+
+                    // 像素雨滴
+                    const rainTime = Date.now() * 0.01;
+                    for (let i = 0; i < 20; i++) {
+                        const x = (i * W / 20) + Math.sin(rainTime + i) * 5;
+                        const y = (Math.floor((frame + i * 5) % 50) / 50) * H * 0.4;
+                        animationCtx.fillStyle = '#4169e1';
+                        animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal * 2);
+                    }
+
+                    // 像素地面
+                    const groundY = H * 0.45;
+                    animationCtx.fillStyle = '#7cfc00';
+                    for (let y = groundY; y < H; y += pixelSizeLocal) {
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            if (Math.random() > 0.2) {
+                                animationCtx.fillRect(x, y, pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+
+                    // 像素河流
+                    const riverY = H * 0.5;
+                    const waterColors = ['#1e90ff', '#00bfff', '#87ceeb'];
+                    for (let y = riverY; y < H * 0.75; y += pixelSizeLocal) {
+                        const colorIndex = Math.floor((y - riverY) / ((H * 0.75 - riverY) / waterColors.length));
+                        animationCtx.fillStyle = waterColors[colorIndex];
+                        for (let x = 0; x < W; x += pixelSizeLocal) {
+                            const wave = Math.sin((x + frame * 2.5) * 0.045) * pixelSizeLocal;
+                            if (Math.random() > 0.25) {
+                                animationCtx.fillRect(x, y + wave, pixelSizeLocal, pixelSizeLocal);
+                            }
+                        }
+                    }
+
+                    // 雨伞漂浮动画
+                    const umbrellaFloat = Math.sin(frame * 0.12) * pixelSizeLocal * 1.5;
+                    const currentY = umbrellaY + umbrellaFloat;
+
+                    // 像素纸伞 + 小人
+                    // 伞面
+                    animationCtx.fillStyle = '#ff6347';
+                    for (let i = 0; i < 4; i++) {
+                        const width = (i + 1) * pixelSizeLocal * 2;
+                        animationCtx.fillRect(umbrellaX - width / 2, currentY - (4 - i) * pixelSizeLocal, width, pixelSizeLocal);
+                    }
+                    // 伞顶
+                    animationCtx.fillStyle = '#ff4500';
+                    animationCtx.fillRect(umbrellaX - pixelSizeLocal * 0.5, currentY - pixelSizeLocal * 5, pixelSizeLocal, pixelSizeLocal);
+
+                    // 伞下的小人
+                    const charY = currentY + pixelSizeLocal * 2;
+                    // 头发
+                    animationCtx.fillStyle = '#2c1810';
+                    animationCtx.fillRect(umbrellaX - pixelSizeLocal * 1.5, charY - pixelSizeLocal * 2, pixelSizeLocal * 3, pixelSizeLocal * 1.5);
+                    // 脸
+                    animationCtx.fillStyle = '#ffdab9';
+                    animationCtx.fillRect(umbrellaX - pixelSizeLocal * 1.5, charY - pixelSizeLocal * 0.5, pixelSizeLocal * 3, pixelSizeLocal * 2);
+                    // 眼睛
+                    animationCtx.fillStyle = '#000000';
+                    animationCtx.fillRect(umbrellaX - pixelSizeLocal * 0.6, charY, pixelSizeLocal, pixelSizeLocal);
+                    animationCtx.fillRect(umbrellaX + pixelSizeLocal * 0.6, charY, pixelSizeLocal, pixelSizeLocal);
+                    // 身体
+                    animationCtx.fillStyle = '#4169e1';
+                    animationCtx.fillRect(umbrellaX - pixelSizeLocal * 2, charY + pixelSizeLocal * 2, pixelSizeLocal * 4, pixelSizeLocal * 3);
+
+                    // 像素小房子（对岸的家）
+                    const houseX = W - 50, houseY = H * 0.4;
+                    animationCtx.fillStyle = '#fff8dc';
+                    animationCtx.fillRect(houseX, houseY, pixelSizeLocal * 8, pixelSizeLocal * 6);
+                    animationCtx.fillStyle = '#cd5c5c';
+                    animationCtx.fillRect(houseX - pixelSizeLocal * 2, houseY - pixelSizeLocal * 4, pixelSizeLocal * 12, pixelSizeLocal * 4);
+
+                    animationProgress.textContent = `飘雨中... ${Math.floor((umbrellaX / W) * 100)}%`;
+                }
+
+                function animate() {
+                    draw();
+                    umbrellaX += 2.5;
+                    frame++;
+                    if (frame < 120) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        animationProgress.textContent = '★ 平安到家！★';
+                        setTimeout(() => {
+                            animationOverlay.classList.remove('show');
+                            resolve();
+                        }, 400);
+                    }
+                }
+                animate();
+            });
+        }
+
+        async function playSuccessAnimation() {
+            return new Promise((resolve) => {
+                animationTitle.textContent = '★ 成功通关 ★';
+                animationOverlay.classList.add('show');
+
+                const W = 420, H = 260;
+                animationCanvas.width = W;
+                animationCanvas.height = H;
+                let frame = 0;
+
+                function draw() {
+                    const g = animationCtx.createLinearGradient(0, 0, 0, H);
+                    g.addColorStop(0, '#166534');
+                    g.addColorStop(1, '#0c2340');
+                    animationCtx.fillStyle = g;
+                    animationCtx.fillRect(0, 0, W, H);
+
+                    animationCtx.fillStyle = '#4ade80';
+                    animationCtx.font = '16px FangSong';
+                    animationCtx.textAlign = 'center';
+                    animationCtx.fillText('★ 成功 ★', W / 2, H / 2 - 20);
+
+                    animationCtx.fillStyle = '#fff';
+                    animationCtx.font = '12px FangSong';
+                    animationCtx.fillText(LEVELS[currentLevel - 1].successDialog, W / 2, H / 2 + 20);
+                    animationCtx.textAlign = 'left';
+
+                    animationProgress.textContent = '恭喜过关！';
+                }
+
+                function animate() {
+                    draw();
+                    frame++;
+                    if (frame < 90) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        setTimeout(() => {
+                            animationOverlay.classList.remove('show');
+                            resolve();
+                        }, 300);
+                    }
+                }
+                animate();
+            });
+        }
+
+        // 全局变量记录识别的类型
+        let lastRecognizedType = '';
+
+        async function handlePass(type) {
+            hasPassed = true;
+            lastRecognizedType = type;
+            gameState.levelAttempts[currentLevel] = (gameState.levelAttempts[currentLevel] || 0) + 1;
+
+            if (!gameState.completedLevels.includes(currentLevel)) {
+                gameState.completedLevels.push(currentLevel);
+            }
+
+            if (currentLevel === 2) {
+                await playFanAnimation();
+            } else {
+                // 第一关根据识别到的类型播放对应动画
+                if (type && (type.includes('船') || type.toLowerCase().includes('boat'))) {
+                    await playPaperBoatAnimation();
+                } else if (type && (type.includes('飞机') || type.toLowerCase().includes('plane') || type.toLowerCase().includes('airplane'))) {
+                    await playPaperPlaneAnimation();
+                } else if (type && (type.includes('伞') || type.toLowerCase().includes('umbrella'))) {
+                    await playPaperUmbrellaAnimation();
+                } else {
+                    await playPaperBoatAnimation();
+                }
+            }
+            await playSuccessAnimation();
+            createConfetti();
+            showActionBtn(true);
+            resetBtn.style.display = 'inline-block';
+            playSuccessSound();
+
+            // 判断是否两关都完成
+            if (gameState.completedLevels.length >= 2 && currentLevel === 2) {
+                showDialog(LEVELS[currentLevel - 1].successDialog, () => {
+                    setTimeout(() => {
+                        playVictoryScreen();
+                    }, 500);
+                });
+            } else {
+                showDialog(LEVELS[currentLevel - 1].successDialog);
+            }
+        }
+
+        function handleFail() {
+            hasPassed = false;
+            gameState.levelAttempts[currentLevel] = (gameState.levelAttempts[currentLevel] || 0) + 1;
+            showActionBtn(false);
+            resetBtn.style.display = 'inline-block';
+            playFailSound();
+            showDialog(LEVELS[currentLevel - 1].failDialog);
+        }
+
+        function startGame() {
+            gameStarted = true;
+            startBtn.style.display = 'none';
+            captureGroup.style.display = 'flex';
+            captureBtn.disabled = false;
+            gameState.startTime = Date.now();
+            playAmbientSound(currentLevel === 1 ? 'river' : 'fire');
+        }
+
+        async function handleStartFromScreen() {
+            initAudio();
+            startScreen.style.display = 'none';
+            playClickSound();
+
+            await playIntroAnimation();
+
+            if (currentLevel === 1) {
+                showDialog('小精灵：我该怎么回家呢？', () => {
+                    playClickSound();
+                    showDialog('折纸天使：我是折纸天使，让我来帮你吧！', () => {
+                        startGame();
+                    });
+                });
+            } else {
+                showDialog('孙悟空：让俺老孙将这张纸变为扇子，再也不需要那铁扇公主的帮忙了！', () => {
+                    startGame();
+                });
+            }
+        }
+
+        function retry() {
+            playClickSound();
+            hideResult();
+            hideActionBtn();
+            hasPassed = false;
+            if (captureBtn) captureBtn.disabled = false;
+        }
+
+        async function nextLevel() {
+            playClickSound();
+
+            if (currentLevel >= LEVELS.length) {
+                showDialog('恭喜你已通关全部关卡！', () => {
+                    resetGame();
+                });
+                return;
+            }
+
+            hideResult();
+            hideActionBtn();
+            hasPassed = false;
+            gameStarted = false;
+            startBtn.style.display = 'inline-block';
+            captureGroup.style.display = 'none';
+            resetBtn.style.display = 'none';
+
+            stopAmbientSound();
+
+            await showLevelTransition();
+
+            currentLevel++;
+            gameState.level = currentLevel;
+            levelDisplay.textContent = currentLevel;
+            levelName.textContent = LEVELS[currentLevel - 1].name;
+            updateLevelDots();
+            updateGuideVideo();
+            drawScene();
+
+            await playIntroAnimation();
+
+            if (currentLevel === 2) {
+                showDialog('孙悟空：让俺老孙将这张纸变为扇子，再也不需要那铁扇公主的帮忙了！', () => {
+                    startGame();
+                });
+            }
+        }
+
+        function resetGame() {
+            playClickSound();
+            stopAmbientSound();
+
+            currentLevel = 1;
+            hasPassed = false;
+            gameStarted = false;
+            gameState = {
+                level: 1,
+                totalAttempts: 0,
+                levelAttempts: {},
+                startTime: null,
+                completedLevels: []
+            };
+
+            victoryOverlay.classList.remove('show');
+            animationOverlay.classList.remove('show');
+            
+            levelDisplay.textContent = currentLevel;
+            levelName.textContent = LEVELS[0].name;
+            updateLevelDots();
+            updateGuideVideo();
+            hideResult();
+            hideActionBtn();
+            startBtn.style.display = 'inline-block';
+            captureGroup.style.display = 'none';
+            resetBtn.style.display = 'none';
+            drawScene();
+        }
+
+        async function handleCapture() {
+            if (hasPassed || !gameStarted) return;
+
+            const apiKey = apiKeyInput.value.trim();
+            const useAPI = apiKey.length > 0;
+
+            showLoading(true);
+            hideResult();
+            hideActionBtn();
+            playClickSound();
+
+            try {
+                let result;
+                if (useAPI) {
+                    saveApiKey();
+                    result = await callGeminiAPI(captureFrame(), apiKey);
+                } else {
+                    await new Promise(r => setTimeout(r, 1500));
+                    result = getRandomDemoResult();
+                }
+
+                showLoading(false);
+                const isPass = result.rating === '优秀' || result.rating === '中等';
+                showResult(isPass, result.reason, result.type);
+                gameState.totalAttempts++;
+
+                if (isPass) {
+                    await handlePass(result.type);
+                } else {
+                    handleFail();
+                }
+            } catch (err) {
+                showLoading(false);
+                showResult(false, `错误: ${err.message}`, '', true);
+                handleFail();
+            }
+        }
+
+        function init() {
+            initElements();
+            createStartParticles();
+            loadApiKey();
+            updateLevelDots();
+            updateGuideVideo();
+            drawScene();
+            initCamera();
+            
+            handleViewport();
+
+            window.addEventListener('resize', () => {
+                handleViewport();
+                drawScene();
+            });
+
+            document.getElementById('startGameBtn').addEventListener('click', handleStartFromScreen);
+            soundToggle.addEventListener('click', () => { toggleSound(); saveSoundSetting(); });
+            apiKeyInput.addEventListener('change', saveApiKey);
+            startBtn.addEventListener('click', () => { playClickSound(); startGame(); });
+            captureBtn.addEventListener('click', handleCapture);
+            retryBtn.addEventListener('click', retry);
+            nextBtn.addEventListener('click', nextLevel);
+            resetBtn.addEventListener('click', resetGame);
+
+            window.addEventListener('beforeunload', () => { stopCamera(); stopAmbientSound(); });
+            setInterval(drawScene, 50);
+        }
+        
+        function handleViewport() {
+            const isMobile = window.innerWidth <= 768;
+            const cameraSection = document.querySelector('.camera-section');
+            const sceneSection = document.querySelector('.scene-section');
+            
+            if (isMobile) {
+                // 手机端强制正常布局
+                if (cameraSection) {
+                    cameraSection.style.position = 'relative';
+                    cameraSection.style.top = '0';
+                    cameraSection.style.flex = 'none';
+                }
+                if (sceneSection) {
+                    sceneSection.style.flex = 'none';
+                }
+                document.body.style.overflow = 'auto';
+            } else {
+                // 电脑端恢复原样
+                if (cameraSection) {
+                    cameraSection.style.position = 'sticky';
+                    cameraSection.style.top = '20px';
+                    cameraSection.style.flex = '0 0 340px';
+                }
+                if (sceneSection) {
+                    sceneSection.style.flex = '1';
+                }
+                document.body.style.overflow = '';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
